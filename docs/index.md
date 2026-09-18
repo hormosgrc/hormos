@@ -21,7 +21,7 @@ do seu SGSI sai da sua rede**.
 |---|---|---|---|
 | Preço | **gratuito, sem prazo** | licenciado | licenciado |
 | ISO/IEC 27001 (Anexo A + requisitos) | ✓ | ✓ | ✓ |
-| LGPD (RoPA, prazos legais, Encarregado) | ✓ | ✓ | ✓ |
+| LGPD (RoPA, prazos legais, Encarregado) | — | ✓ | ✓ |
 | CIS Controls v8 | — | ✓ | ✓ |
 | NIST CSF · COBIT · ISO 42001 | — | — | ✓ |
 | Correlação entre normas | — | ✓ | ✓ |
@@ -29,7 +29,7 @@ do seu SGSI sai da sua rede**.
 | Atualização de catálogo normativo | — | ✓ | ✓ |
 
 A **Edição Comunidade** não é demonstração nem versão limitada no tempo: é um
-SGSI ISO 27001 + LGPD completo, para uma instância, para sempre, sem cadastro.
+SGSI ISO 27001 completo, para uma instância, para sempre, sem cadastro.
 
 ## Licenciamento
 
