@@ -6,7 +6,7 @@ Docker se ele não existir.
 ## Linux e macOS
 
 ```bash
-git clone https://github.com/tracado/tracado.git
+git clone https://github.com/hormosgrc/hormos.git
 cd hormos
 ./install.sh
 ```

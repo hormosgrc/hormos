@@ -19,7 +19,7 @@ VERSION="${VERSION:-$(git -C "${PORTAL_SRC}" describe --tags --always 2>/dev/nul
 GIT_SHA="$(git -C "${PORTAL_SRC}" rev-parse HEAD 2>/dev/null || echo desconhecido)"
 BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 BUILD_ID="$(date -u +%Y%m%d%H%M%S)-${GIT_SHA:0:7}"
-REGISTRY="${REGISTRY:-ghcr.io/tracado}"
+REGISTRY="${REGISTRY:-ghcr.io/hormosgrc}"
 IMAGEM="${REGISTRY}/hormos-portal"
 
 sujo=""

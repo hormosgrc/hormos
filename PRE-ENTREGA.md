@@ -44,7 +44,7 @@ O `generate-secrets.sh` cobre parte, mas **não gera dois segredos críticos**. 
       forjar licença mesmo tendo o código e o `.env`. *(Ver conversa/decisão de projeto.)*
       - Remover `LICENSE_SIGNING_KEY` do `.env` do cliente; trocar por `LICENSE_PUBLIC_KEY`.
 - [x] **Entregar imagem Docker pré-buildada**, não o código-fonte — feito: o compose
-      puxa `ghcr.io/tracado/tracado-portal` e o código vive em repositório privado.
+      puxa `ghcr.io/hormosgrc/hormos-portal` e o código vive em repositório privado.
       Dificulta adulterar o `licenca.py` para burlar o check. Distribuir `.pyc`.
 - [ ] **(Opcional) Vínculo por install_id** — a chave carrega um id da instalação e o
       appliance recusa se não bater; impede reuso de licença vazada em outra instalação.

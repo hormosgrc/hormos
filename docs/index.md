@@ -47,7 +47,7 @@ produto como serviço gerenciado a terceiros e contornar a verificação de lice
 ## Segurança
 
 Encontrou uma vulnerabilidade? Veja a
-[política de segurança](https://github.com/tracado/tracado/blob/main/SECURITY.md).
+[política de segurança](https://github.com/hormosgrc/hormos/blob/main/SECURITY.md).
 Não abra issue pública.
 
 ---

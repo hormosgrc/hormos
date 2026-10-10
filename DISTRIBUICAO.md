@@ -6,7 +6,7 @@ Uma **imagem assinada**, não o repositório. O `install.sh` puxa a imagem do
 registro em vez de construir a partir do código.
 
 ```
-ghcr.io/tracado/tracado-portal:<versão>
+ghcr.io/hormosgrc/hormos-portal:<versão>
 ```
 
 A imagem carrega a procedência nos rótulos OCI: versão, **commit exato**, data
@@ -14,7 +14,7 @@ de build e um id de build. Pegando um contêiner rodando em qualquer cliente,
 volta-se ao commit que o gerou:
 
 ```bash
-docker image inspect ghcr.io/tracado/tracado-portal:2.1.0 \
+docker image inspect ghcr.io/hormosgrc/hormos-portal:2.1.0 \
   --format '{{index .Config.Labels "org.opencontainers.image.revision"}}'
 ```
 
@@ -38,7 +38,7 @@ pré-requisito do appliance. O cosign roda como contêiner:
 
 ```bash
 docker run --rm ghcr.io/sigstore/cosign/cosign:latest verify \
-  ghcr.io/tracado/tracado-portal@sha256:<digest> \
+  ghcr.io/hormosgrc/hormos-portal@sha256:<digest> \
   --certificate-identity-regexp '.*' --certificate-oidc-issuer-regexp '.*'
 ```
 
