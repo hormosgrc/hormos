@@ -132,6 +132,10 @@ docker run --rm -v "$PWD/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine
 $DC up -d
 sleep 15
 
+# O --import-realm só vale para realm novo: num appliance já instalado, a marca
+# da tela de login vive no banco do Keycloak e não acompanha o arquivo.
+./scripts/sincronizar-marca-keycloak.sh || true
+
 # Analista IA: tier automático por RAM + download dos modelos (idempotente)
 if [ "$IA" = "1" ]; then
   # ── Tier por RAM disponível ao Docker (respeita OLLAMA_MODEL já definido) ──
