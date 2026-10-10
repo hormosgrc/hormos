@@ -14,7 +14,7 @@ de build e um id de build. Pegando um contêiner rodando em qualquer cliente,
 volta-se ao commit que o gerou:
 
 ```bash
-docker image inspect ghcr.io/hormosgrc/hormos-portal:2.1.0 \
+docker image inspect ghcr.io/hormosgrc/hormos-portal:2.2.0 \
   --format '{{index .Config.Labels "org.opencontainers.image.revision"}}'
 ```
 

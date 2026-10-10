@@ -5,10 +5,11 @@ COBIT 2019 e ISO 42001, com correlação entre normas e IA local.
 
 > **ὅρμος** (*hórmos*), do grego: o ancoradouro abrigado onde o navio para no
 > meio da viagem — e também o colar, contas presas num mesmo fio. Os dois
-> sentidos dizem o que o produto é. Ninguém certifica da noite para o dia: o
-> Hormos é a parada segura entre querer a certificação e tê-la, com ativo,
-> risco, controle, evidência e plano num fio só. O símbolo é esse fio, com
-> duas contas.
+> sentidos descrevem o produto. Ninguém certifica — **nem se mantém
+> certificado** — da noite para o dia: a conformidade não é um destino que se
+> alcança e encerra, é uma travessia que continua depois do certificado. O
+> Hormos é a parada segura ao longo dela, com ativo, risco, controle,
+> evidência e plano num fio só. O símbolo é esse fio, com duas contas.
 
 **Este é o repositório público**: compose, gateway, autenticação, esquema de
 banco, instaladores e documentação. O código do portal e o licenciador vivem em
