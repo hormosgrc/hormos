@@ -44,7 +44,7 @@ docker build \
 
 echo "▸ Imagem construída:"
 docker image inspect "${IMAGEM}:${VERSION}" \
-  --format '   {{index .Config.Labels "org.opencontainers.image.version"}} · commit {{index .Config.Labels "org.opencontainers.image.revision"}} · build {{index .Config.Labels "br.com.tracadogrc.build_id"}}'
+  --format '   {{index .Config.Labels "org.opencontainers.image.version"}} · commit {{index .Config.Labels "org.opencontainers.image.revision"}} · build {{index .Config.Labels "br.com.hormosgrc.build_id"}}'
 
 if [ "${PUBLICAR:-nao}" = "sim" ]; then
   docker push "${IMAGEM}:${VERSION}"

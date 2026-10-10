@@ -2,7 +2,7 @@
 
 ## Como reportar uma vulnerabilidade
 
-Reporte por e-mail para **seguranca@tracadogrc.com.br**, de preferência com:
+Reporte por e-mail para **hormosgrc@gmail.com**, de preferência com:
 
 - o que acontece e o impacto (o que um atacante consegue fazer);
 - como reproduzir, passo a passo;
