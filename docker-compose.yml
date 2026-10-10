@@ -56,7 +56,7 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
     volumes:
       - ./keycloak/realm-sgsi.json:/opt/keycloak/data/import/realm-sgsi.json:ro
-      - ./keycloak/themes/tracado:/opt/keycloak/themes/tracado:ro
+      - ./keycloak/themes/hormos:/opt/keycloak/themes/hormos:ro
     depends_on:
       keycloak-db-init:
         condition: service_completed_successfully

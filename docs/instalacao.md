@@ -7,7 +7,7 @@ Docker se ele não existir.
 
 ```bash
 git clone https://github.com/tracado/tracado.git
-cd tracado
+cd hormos
 ./install.sh
 ```
 

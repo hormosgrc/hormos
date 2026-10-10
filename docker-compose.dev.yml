@@ -6,16 +6,16 @@
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 #
 # Espera a seguinte disposição:
-#   ~/tracado/           (este repositório, público)
-#   ~/tracado-portal/    (privado — o código do portal)
+#   ~/hormos/           (este repositório, público)
+#   ~/hormos-portal/    (privado — o código do portal)
 #
 # Ajuste PORTAL_SRC no .env se o clone estiver em outro lugar.
 services:
   sgsi-portal:
     build:
-      context: ${PORTAL_SRC:-../tracado-portal}
+      context: ${PORTAL_SRC:-../hormos-portal}
       args:
         VERSION: dev
         GIT_SHA: local
         BUILD_ID: dev
-    image: tracado-portal:dev
+    image: hormos-portal:dev

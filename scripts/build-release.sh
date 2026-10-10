@@ -8,7 +8,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PORTAL_SRC="${PORTAL_SRC:-../tracado-portal}"
+PORTAL_SRC="${PORTAL_SRC:-../hormos-portal}"
 if [ ! -f "${PORTAL_SRC}/Dockerfile" ]; then
   echo "✗ Código do portal não encontrado em ${PORTAL_SRC}."
   echo "  Clone o repositório privado ao lado deste, ou defina PORTAL_SRC."
@@ -20,7 +20,7 @@ GIT_SHA="$(git -C "${PORTAL_SRC}" rev-parse HEAD 2>/dev/null || echo desconhecid
 BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 BUILD_ID="$(date -u +%Y%m%d%H%M%S)-${GIT_SHA:0:7}"
 REGISTRY="${REGISTRY:-ghcr.io/tracado}"
-IMAGEM="${REGISTRY}/tracado-portal"
+IMAGEM="${REGISTRY}/hormos-portal"
 
 sujo=""
 if git -C "${PORTAL_SRC}" status --porcelain 2>/dev/null | grep -q .; then
@@ -40,7 +40,7 @@ docker build \
   --build-arg "BUILD_DATE=${BUILD_DATE}" \
   --build-arg "BUILD_ID=${BUILD_ID}" \
   -t "${IMAGEM}:${VERSION}" -t "${IMAGEM}:latest" \
-  "${PORTAL_SRC:-../tracado-portal}"
+  "${PORTAL_SRC:-../hormos-portal}"
 
 echo "▸ Imagem construída:"
 docker image inspect "${IMAGEM}:${VERSION}" \

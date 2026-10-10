@@ -35,7 +35,7 @@ código-fonte.
 Clone o repositório do portal ao lado deste e use o override:
 
 ```bash
-git clone <privado>/tracado-portal ../tracado-portal
+git clone <privado>/tracado-portal ../hormos-portal
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ```
 
@@ -100,7 +100,7 @@ fornecer como serviço gerenciado e contornar a chave de licença são vedados.
 
 O botão 🌓 no topo alterna entre o tema escuro (padrão, premium) e o claro (enterprise),
 com persistência por navegador. A tela de login do Keycloak usa o tema `tracado`
-(mesma identidade visual), definido em `keycloak/themes/tracado`.
+(mesma identidade visual), definido em `keycloak/themes/hormos`.
 
 **Tipografia**: Poppins (títulos), Inter (texto) e IBM Plex Mono (códigos/números) —
 **auto-hospedadas** na imagem do portal e no tema do Keycloak: nenhuma chamada

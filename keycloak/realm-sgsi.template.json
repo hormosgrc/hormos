@@ -3,7 +3,7 @@
   "enabled": true,
   "displayName": "Hormos",
   "displayNameHtml": "<div class=\"grc-brand\">Hormos<span>GOVERNANÇA · RISCO · COMPLIANCE</span></div>",
-  "loginTheme": "tracado",
+  "loginTheme": "hormos",
   "internationalizationEnabled": true,
   "supportedLocales": ["pt-BR", "en"],
   "defaultLocale": "pt-BR",

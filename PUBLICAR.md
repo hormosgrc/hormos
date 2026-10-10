@@ -67,7 +67,7 @@ Comece pelos privados. Se algo der errado, nada sensível estará exposto.
 **2.1 — O portal (o miolo do produto):**
 
 ```bash
-cd ~/tracado-portal
+cd ~/hormos-portal
 gh repo create tracado-portal --private --source=. --remote=origin --push
 ```
 
@@ -77,7 +77,7 @@ esta pasta; `--remote=origin` registra o endereço remoto; `--push` já envia.
 **2.2 — O licenciador:**
 
 ```bash
-cd ~/tracado-licenciador
+cd ~/hormos-licenciador
 gh repo create tracado-licenciador --private --source=. --remote=origin --push
 ```
 
@@ -100,7 +100,7 @@ Este é o único irreversível: uma vez público, considere que alguém já copi
 **3.1** Veja exatamente o que sairá:
 
 ```bash
-cd ~/tracado
+cd ~/hormos
 git ls-files
 ```
 
@@ -129,13 +129,13 @@ endereço será `https://SEU-USUARIO.github.io/tracado/`.
 convertida do produto. Confirme:
 
 ```bash
-ls ~/tracado/docs
+ls ~/hormos/docs
 ```
 
 **4.2** Ligue o Pages:
 
 ```bash
-cd ~/tracado
+cd ~/hormos
 gh api -X POST repos/:owner/tracado/pages -f "source[branch]=main" -f "source[path]=/docs"
 ```
 
@@ -161,7 +161,7 @@ a branch** → *Branch*: **main**, pasta **/docs** → **Save**.
 Trabalhou no código, quer mandar para o GitHub:
 
 ```bash
-cd ~/tracado-portal      # ou o repositório que você mexeu
+cd ~/hormos-portal      # ou o repositório que você mexeu
 git status               # o que mudou
 git add -A               # marca tudo para o próximo commit
 git commit -m "descreva em uma linha o que mudou"

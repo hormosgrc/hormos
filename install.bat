@@ -109,9 +109,9 @@ wsl -d %DISTRO% -u root -- bash -c "systemctl enable --now docker >/dev/null 2>&
 REM ── 5. Copia o projeto para dentro do WSL e instala ───────────────
 echo  [5/6] Preparando o Hormos dentro do WSL...
 for /f "usebackq delims=" %%i in (`wsl -d %DISTRO% -u root -- wslpath "'%CD%'"`) do set "SRC=%%i"
-wsl -d %DISTRO% -u root -- bash -c "mkdir -p /opt/tracado && cp -r '%SRC%/.' /opt/tracado/ 2>/dev/null; cd /opt/tracado && chmod +x install.sh scripts/*.sh 2>/dev/null; true"
+wsl -d %DISTRO% -u root -- bash -c "mkdir -p /opt/hormos && cp -r '%SRC%/.' /opt/hormos/ 2>/dev/null; cd /opt/hormos && chmod +x install.sh scripts/*.sh 2>/dev/null; true"
 echo       Executando a instalacao (pode demorar na primeira vez)...
-wsl -d %DISTRO% -u root -- bash -c "cd /opt/tracado && ./install.sh local"
+wsl -d %DISTRO% -u root -- bash -c "cd /opt/hormos && ./install.sh local"
 if %errorLevel% neq 0 (
     echo  ✖ A instalacao dentro do WSL falhou. Veja as mensagens acima.
     pause & exit /b 1
@@ -119,10 +119,10 @@ if %errorLevel% neq 0 (
 
 REM ── 6. Confiar na CA interna (Windows + Firefox) ──────────────────
 echo  [6/6] Instalando o certificado da CA interna...
-wsl -d %DISTRO% -u root -- bash -c "cd /opt/tracado && docker exec sgsi_caddy sh -c 'cat /data/caddy/pki/authorities/local/root.crt' > /opt/tracado/caddy/Tracado-CA-local.crt 2>/dev/null; true"
-wsl -d %DISTRO% -u root -- bash -c "cp /opt/tracado/caddy/Tracado-CA-local.crt '%SRC%/caddy/Tracado-CA-local.crt' 2>/dev/null; true"
-if exist "%CD%\caddy\Tracado-CA-local.crt" (
-    certutil -addstore -f Root "%CD%\caddy\Tracado-CA-local.crt" >nul 2>&1
+wsl -d %DISTRO% -u root -- bash -c "cd /opt/hormos && docker exec sgsi_caddy sh -c 'cat /data/caddy/pki/authorities/local/root.crt' > /opt/hormos/caddy/Hormos-CA-local.crt 2>/dev/null; true"
+wsl -d %DISTRO% -u root -- bash -c "cp /opt/hormos/caddy/Hormos-CA-local.crt '%SRC%/caddy/Hormos-CA-local.crt' 2>/dev/null; true"
+if exist "%CD%\caddy\Hormos-CA-local.crt" (
+    certutil -addstore -f Root "%CD%\caddy\Hormos-CA-local.crt" >nul 2>&1
     if !errorLevel! equ 0 (
         echo  ✓ CA confiada no Windows ^(Chrome e Edge^).
     ) else (
