@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ════════════════════════════════════════════════════════════════════
-# Traçado — instalador para Linux (Ubuntu/Debian/RHEL) e macOS.
+# Hormos — instalador para Linux (Ubuntu/Debian/RHEL) e macOS.
 # Windows: use o install.bat (duplo clique).
 #
 # Basta rodar ./install.sh SEM parâmetros: o instalador pergunta se é
@@ -28,9 +28,9 @@ cd "$(dirname "$0")"
 # ── Modo interativo: sem parâmetros e num terminal, o instalador pergunta ──
 if [ $# -eq 0 ] && [ -t 0 ]; then
   echo "═══════════════════════════════════════════"
-  echo "   Traçado — Instalação guiada"
+  echo "   Hormos — Instalação guiada"
   echo "═══════════════════════════════════════════"
-  echo "Onde o Traçado vai rodar?"
+  echo "Onde o Hormos vai rodar?"
   echo "  [1] Local / testes  (http://localhost:8080)"
   echo "  [2] Produção com o domínio do cliente (HTTPS automático)"
   printf "Escolha [1]: "; read -r R || true
@@ -113,7 +113,8 @@ chmod +x scripts/*.sh *.sh 2>/dev/null || true
 if grep -q CHANGE_ME .env; then ./generate-secrets.sh; fi
 ./scripts/render-keycloak-realm.sh
 # preserva o Caddyfile de produção (domínio próprio via ./configurar-dominio.sh)
-if [ -f caddy/Caddyfile ] && grep -q "TRACADO-PRODUCAO" caddy/Caddyfile; then
+# aceita o marcador antigo (TRACADO-): instalação anterior ao renome da marca
+if [ -f caddy/Caddyfile ] && grep -qE "(HORMOS|TRACADO)-PRODUCAO" caddy/Caddyfile; then
   echo "Caddyfile de produção detectado — mantido (para voltar ao localhost, apague caddy/Caddyfile)."
 else
   cp caddy/Caddyfile.local caddy/Caddyfile

@@ -87,7 +87,11 @@ def _busca(corpo, tentativas=3):
 
 
 def inpi(nome, radical=None):
-    """Busca por RADICAL — é ela que pega CUSTODI dentro de TRAÇADO."""
+    """Busca por RADICAL — pega o registro curto contido no nome candidato.
+
+    É a busca que importa: a exata passa limpa e esconde a colisão. Foi assim
+    que "lastro" apareceu com 19 marcas vivas, enquanto "hormos" deu zero.
+    """
     base = sem_acento(radical or nome).lower()
     achados = []
     for cl in CLASSES:

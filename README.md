@@ -1,7 +1,14 @@
-# Traçado — Appliance
+# Hormos — Appliance
 
 Plataforma de GRC auto-hospedada: ISO 27001, LGPD, CIS Controls v8, NIST CSF,
 COBIT 2019 e ISO 42001, com correlação entre normas e IA local.
+
+> **ὅρμος** (*hórmos*), do grego: o ancoradouro abrigado onde o navio para no
+> meio da viagem — e também o colar, contas presas num mesmo fio. Os dois
+> sentidos dizem o que o produto é. Ninguém certifica da noite para o dia: o
+> Hormos é a parada segura entre querer a certificação e tê-la, com ativo,
+> risco, controle, evidência e plano num fio só. O símbolo é esse fio, com
+> duas contas.
 
 **Este é o repositório público**: compose, gateway, autenticação, esquema de
 banco, instaladores e documentação. O código do portal e o licenciador vivem em
@@ -40,7 +47,7 @@ fornecer como serviço gerenciado e contornar a chave de licença são vedados.
 
 ---
 
-# Traçado v2.1
+# Hormos v2.1
 
 **Plataforma de Governança, Riscos e Conformidade** — Multi-framework, self-hosted, sem licenciamento por usuário.
 
@@ -116,7 +123,7 @@ tem um guia com atalhos; os principais caminhos no realm `sgsi`:
 
 ### Como o SSO aparece no login
 
-O acesso ao portal pula direto para a tela de login do Traçado (tema `tracado`,
+O acesso ao portal pula direto para a tela de login do Hormos (tema `tracado`,
 sem tela intersticial). Quando você adiciona um Identity Provider no realm `sgsi`,
 o botão **"Entrar com ..."** (Azure AD, Google etc.) aparece automaticamente
 **nessa mesma tela**, abaixo do usuário/senha — o usuário escolhe como entrar.

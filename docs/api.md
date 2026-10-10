@@ -11,7 +11,7 @@ responde `403` — o registro do SGSI pela tela continua completo e gratuito.
 
 ## Autenticação
 
-O Traçado não inventou autenticação para a API. Ela usa o **Keycloak que já
+O Hormos não inventou autenticação para a API. Ela usa o **Keycloak que já
 vem no appliance**, pelo fluxo `client_credentials` do OAuth2 — o padrão para
 máquina falando com máquina. Não há usuário, senha de pessoa nem navegador
 envolvidos.
@@ -176,7 +176,7 @@ curl -X POST "https://SEU-DOMINIO/api/v1/ativos" \
 { "codigo": "IA-0042" }
 ```
 
-**O código é atribuído pelo Traçado**, nunca enviado por você. Mandar `codigo`
+**O código é atribuído pelo Hormos**, nunca enviado por você. Mandar `codigo`
 no corpo é recusado — aceitar produziria colisão silenciosa entre integrações.
 
 ### Criar em lote

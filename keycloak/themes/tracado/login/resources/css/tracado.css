@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   Traçado — tema de login (Keycloak / PatternFly v5)
+   Hormos — tema de login (Keycloak / PatternFly v5)
    Mesma identidade do portal: dark premium, cyan → purple.
    ═══════════════════════════════════════════════════════════════════ */
 /* Fontes auto-hospedadas (mesma tipografia do portal; login funciona offline) */
@@ -42,9 +42,10 @@ body.login-pf,
   letter-spacing: .01em;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
-/* A marca de verdade, não mais a letra 'G' — resquício do nome anterior do
-   produto, que ficou aqui quando ele virou Traçado. O arquivo é local: a tela
-   de login precisa funcionar em rede fechada, como todo o resto do appliance. */
+/* A marca de verdade, não mais a letra 'G' — resquício de um nome anterior do
+   produto, que sobreviveu às trocas de marca até ser arrancado daqui. O arquivo
+   é local: a tela de login precisa funcionar em rede fechada, como todo o resto
+   do appliance. */
 .grc-brand::before {
   content: '';
   width: 54px; height: 54px;

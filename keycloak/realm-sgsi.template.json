@@ -1,8 +1,8 @@
 {
   "realm": "sgsi",
   "enabled": true,
-  "displayName": "Traçado",
-  "displayNameHtml": "<div class=\"grc-brand\">Traçado<span>GOVERNANÇA · RISCO · COMPLIANCE</span></div>",
+  "displayName": "Hormos",
+  "displayNameHtml": "<div class=\"grc-brand\">Hormos<span>GOVERNANÇA · RISCO · COMPLIANCE</span></div>",
   "loginTheme": "tracado",
   "internationalizationEnabled": true,
   "supportedLocales": ["pt-BR", "en"],

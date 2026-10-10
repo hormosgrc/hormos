@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ════════════════════════════════════════════════════════════════════
-# Traçado — instala a CA interna do appliance no repositório de
+# Hormos — instala a CA interna do appliance no repositório de
 # confiança da máquina, para que o HTTPS local abra SEM AVISO em
 # Chrome, Safari, Edge e Firefox.
 #
@@ -15,7 +15,7 @@
 set -u
 cd "$(dirname "$0")/.."
 CA_FILE="caddy/Tracado-CA-local.crt"
-CA_NOME="Traçado Local CA"
+CA_NOME="Hormos Local CA"
 REMOVER=""; [ "${1:-}" = "--remover" ] && REMOVER=1
 
 msg(){ printf '%s\n' "$*"; }

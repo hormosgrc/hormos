@@ -1,11 +1,11 @@
 @echo off
 chcp 65001 >nul
 setlocal EnableDelayedExpansion
-title Traçado - Instalador (Windows)
+title Hormos - Instalador (Windows)
 cd /d "%~dp0"
 
 REM ══════════════════════════════════════════════════════════════════
-REM  Traçado — instalador do Windows.
+REM  Hormos — instalador do Windows.
 REM
 REM  Estratégia: NÃO usa Docker Desktop. Instala o WSL2 (subsistema
 REM  Linux do proprio Windows) e, dentro dele, o Docker Engine +
@@ -27,7 +27,7 @@ if %errorLevel% neq 0 (
 
 echo.
 echo  ═══════════════════════════════════════════════
-echo    Traçado — Instalador (Windows / WSL2)
+echo    Hormos — Instalador (Windows / WSL2)
 echo  ═══════════════════════════════════════════════
 echo.
 
@@ -107,7 +107,7 @@ if %errorLevel% equ 0 (
 wsl -d %DISTRO% -u root -- bash -c "systemctl enable --now docker >/dev/null 2>&1 || service docker start >/dev/null 2>&1; true"
 
 REM ── 5. Copia o projeto para dentro do WSL e instala ───────────────
-echo  [5/6] Preparando o Traçado dentro do WSL...
+echo  [5/6] Preparando o Hormos dentro do WSL...
 for /f "usebackq delims=" %%i in (`wsl -d %DISTRO% -u root -- wslpath "'%CD%'"`) do set "SRC=%%i"
 wsl -d %DISTRO% -u root -- bash -c "mkdir -p /opt/tracado && cp -r '%SRC%/.' /opt/tracado/ 2>/dev/null; cd /opt/tracado && chmod +x install.sh scripts/*.sh 2>/dev/null; true"
 echo       Executando a instalacao (pode demorar na primeira vez)...
@@ -143,7 +143,7 @@ if exist "%CD%\caddy\Tracado-CA-local.crt" (
 
 echo.
 echo  ═══════════════════════════════════════════════
-echo    ✓ Traçado instalado
+echo    ✓ Hormos instalado
 echo.
 echo    Acesse:  https://localhost
 echo.

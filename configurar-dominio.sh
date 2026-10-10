@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ════════════════════════════════════════════════════════════════════
-# Traçado — coloca o appliance no DOMÍNIO PRÓPRIO do cliente, com
+# Hormos — coloca o appliance no DOMÍNIO PRÓPRIO do cliente, com
 # HTTPS automático (Let's Encrypt via Caddy).
 #
 # Uso:
@@ -43,7 +43,7 @@ elif command -v docker-compose >/dev/null 2>&1; then DC="docker-compose";
 else echo "✖ Docker Compose não encontrado."; exit 1; fi
 
 echo "═══════════════════════════════════════════════════"
-echo " Traçado → domínio próprio do cliente"
+echo " Hormos → domínio próprio do cliente"
 echo "   Portal:   https://${PORTAL_DOMAIN}"
 echo "   Login:    https://${AUTH_DOMAIN}"
 echo "   ACME:     ${ACME_EMAIL}"
@@ -109,9 +109,10 @@ print('✓ caddy/Caddyfile de produção gerado')
 PYEOF
 
 # ── 3. Override do compose: expõe 80/443 no host ─────────────────────
-if [ ! -f docker-compose.override.yml ] || ! grep -q "TRACADO-PRODUCAO" docker-compose.override.yml; then
+# aceita o marcador antigo (TRACADO-): instalação anterior ao renome da marca
+if [ ! -f docker-compose.override.yml ] || ! grep -qE "(HORMOS|TRACADO)-PRODUCAO" docker-compose.override.yml; then
   cat > docker-compose.override.yml <<'YAML'
-# TRACADO-PRODUCAO — gerado por configurar-dominio.sh
+# HORMOS-PRODUCAO — gerado por configurar-dominio.sh
 # Expõe HTTP/HTTPS no host para o domínio do cliente (Let's Encrypt usa a 80).
 services:
   caddy:

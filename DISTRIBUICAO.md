@@ -1,4 +1,4 @@
-# Distribuição do Traçado
+# Distribuição do Hormos
 
 ## O que o cliente recebe
 
@@ -68,7 +68,7 @@ Toda instalação exibe, no rodapé de cada tela e no cabeçalho de **cada
 relatório impresso ou salvo em PDF**:
 
 ```
-Traçado v2.1.0 · Licenciado para <cliente> · LIC-000123 · instância C3D3E2957821
+Hormos v2.1.0 · Licenciado para <cliente> · LIC-000123 · instância C3D3E2957821
 ```
 
 A impressão da instância é derivada da **licença assinada** (cliente + código

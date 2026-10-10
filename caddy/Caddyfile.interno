@@ -1,4 +1,4 @@
-# TRACADO-INTERNO — gerado pelo assistente (modo "CA interna").
+# HORMOS-INTERNO — gerado pelo assistente (modo "CA interna").
 # Domínio próprio do cliente em rede fechada, com certificado emitido e
 # renovado pela CA interna do Caddy (tls internal). Distribua a CA raiz
 # (caddy/Tracado-CA-local.crt) nas máquinas do cliente para o cadeado ficar

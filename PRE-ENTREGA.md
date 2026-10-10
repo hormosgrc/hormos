@@ -1,4 +1,4 @@
-# Checklist de Pré-Entrega — Traçado
+# Checklist de Pré-Entrega — Hormos
 
 > Itens **obrigatórios** antes de entregar o appliance a um cliente.
 > Nada aqui deve ser feito durante o desenvolvimento (só gera fricção) — mas

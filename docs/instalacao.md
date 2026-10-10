@@ -1,6 +1,6 @@
 # Instalação
 
-O Traçado roda em Docker. O instalador cuida de tudo, inclusive de instalar o
+O Hormos roda em Docker. O instalador cuida de tudo, inclusive de instalar o
 Docker se ele não existir.
 
 ## Linux e macOS

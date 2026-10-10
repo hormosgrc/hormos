@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build e assinatura da imagem do Traçado.
+# Build e assinatura da imagem do Hormos.
 #
 # Roda na infraestrutura do FORNECEDOR. Produz uma imagem com procedência
 # gravada (versão, commit, data, id de build) e, se o cosign estiver

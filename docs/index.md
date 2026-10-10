@@ -1,13 +1,20 @@
-# Traçado
+# Hormos
 
 **Appliance de GRC auto-hospedado.** Roda inteiro na infraestrutura da sua
 empresa: ISO/IEC 27001, LGPD, CIS Controls v8, NIST CSF, COBIT 2019 e ISO 42001,
 com correlação entre as normas e inteligência artificial local — **nenhum dado
 do seu SGSI sai da sua rede**.
 
+> **ὅρμος** (*hórmos*), do grego: o ancoradouro abrigado onde o navio para no
+> meio da viagem — e também o colar, contas presas num mesmo fio. Os dois
+> sentidos dizem o que o produto é. Ninguém certifica da noite para o dia: o
+> Hormos é a parada segura entre querer a certificação e tê-la, com ativo,
+> risco, controle, evidência e plano num fio só. O símbolo é esse fio, com
+> duas contas.
+
 ## Documentação
 
-- **[Como o Traçado pensa](modelo.md)** — o modelo: o que é cada coisa, por que
+- **[Como o Hormos pensa](modelo.md)** — o modelo: o que é cada coisa, por que
   a norma exige, e como uma puxa a outra.
 - **[Guia de cada tela](telas.md)** — o que você faz, o que o sistema faz
   sozinho e o que ele vai cobrar de você.
