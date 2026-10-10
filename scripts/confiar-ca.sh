@@ -63,8 +63,8 @@ case "$SO" in
     ;;
   Linux)
     DEST=""
-    if   [ -d /usr/local/share/ca-certificates ]; then DEST=/usr/local/share/ca-certificates/tracado-local-ca.crt; ATUALIZA="update-ca-certificates"
-    elif [ -d /etc/pki/ca-trust/source/anchors ]; then DEST=/etc/pki/ca-trust/source/anchors/tracado-local-ca.crt; ATUALIZA="update-ca-trust extract"
+    if   [ -d /usr/local/share/ca-certificates ]; then DEST=/usr/local/share/ca-certificates/hormos-local-ca.crt; ATUALIZA="update-ca-certificates"
+    elif [ -d /etc/pki/ca-trust/source/anchors ]; then DEST=/etc/pki/ca-trust/source/anchors/hormos-local-ca.crt; ATUALIZA="update-ca-trust extract"
     fi
     if [ -z "$DEST" ]; then err "distribuição não reconhecida (sem ca-certificates nem ca-trust)"; exit 1; fi
     if [ -n "$REMOVER" ]; then

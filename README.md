@@ -16,9 +16,9 @@ repositórios próprios e privados.
 
 | repositório | conteúdo | visibilidade |
 |---|---|---|
-| `tracado` (este) | appliance, instaladores, documentação | público |
-| `tracado-portal` | código do portal — vira a imagem distribuída | privado |
-| `tracado-licenciador` | emissão de licenças, chave privada Ed25519 | privado |
+| `hormos` (este) | appliance, instaladores, documentação | público |
+| `hormos-portal` | código do portal — vira a imagem distribuída | privado |
+| `hormos-licenciador` | emissão de licenças, chave privada Ed25519 | privado |
 
 ## Instalação (cliente)
 
@@ -35,7 +35,7 @@ código-fonte.
 Clone o repositório do portal ao lado deste e use o override:
 
 ```bash
-git clone <privado>/tracado-portal ../hormos-portal
+git clone <privado>/hormos-portal ../hormos-portal
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ```
 
@@ -99,7 +99,7 @@ fornecer como serviço gerenciado e contornar a chave de licença são vedados.
 ## Temas (escuro premium ⇄ claro enterprise)
 
 O botão 🌓 no topo alterna entre o tema escuro (padrão, premium) e o claro (enterprise),
-com persistência por navegador. A tela de login do Keycloak usa o tema `tracado`
+com persistência por navegador. A tela de login do Keycloak usa o tema `hormos`
 (mesma identidade visual), definido em `keycloak/themes/hormos`.
 
 **Tipografia**: Poppins (títulos), Inter (texto) e IBM Plex Mono (códigos/números) —
@@ -123,7 +123,7 @@ tem um guia com atalhos; os principais caminhos no realm `sgsi`:
 
 ### Como o SSO aparece no login
 
-O acesso ao portal pula direto para a tela de login do Hormos (tema `tracado`,
+O acesso ao portal pula direto para a tela de login do Hormos (tema `hormos`,
 sem tela intersticial). Quando você adiciona um Identity Provider no realm `sgsi`,
 o botão **"Entrar com ..."** (Azure AD, Google etc.) aparece automaticamente
 **nessa mesma tela**, abaixo do usuário/senha — o usuário escolhe como entrar.

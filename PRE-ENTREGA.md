@@ -13,14 +13,14 @@ O `generate-secrets.sh` cobre parte, mas **não gera dois segredos críticos**. 
 - [x] ~~`LICENSE_SIGNING_KEY`~~ — **não existe mais.** A assinatura passou a ser
       Ed25519: o appliance carrega só `LICENSE_PUBLIC_KEY`, e a privada nunca
       sai do licenciador. Não há segredo de assinatura no `.env` do cliente.
-- [ ] `FLASK_SECRET_KEY` — **NÃO** pode ficar no default `tracado-v2-secret`
+- [ ] `FLASK_SECRET_KEY` — **NÃO** pode ficar no default `hormos-v2-secret`
       (fallback no código do portal). Defina no `.env`: `openssl rand -hex 32`.
       *(Também não é coberto pelo generate-secrets.sh.)*
 - [ ] `POSTGRES_PASSWORD`, `KEYCLOAK_ADMIN_PASSWORD`, `KEYCLOAK_CLIENT_SECRET`,
       `MASTER_PASSWORD`, `OAUTH2_PROXY_COOKIE_SECRET` — rodar `./generate-secrets.sh`
       e confirmar que **nenhum** ficou `CHANGE_ME`.
 - [ ] `MASTER_EMAIL` — trocar `admin@sgsi.local` pelo e-mail real do admin do cliente.
-- [ ] Conferência final: `grep -n 'CHANGE_ME\|padrao\|tracado-v2-secret' .env` deve vir **vazio**.
+- [ ] Conferência final: `grep -n 'CHANGE_ME\|padrao\|hormos-v2-secret' .env` deve vir **vazio**.
 
 ## 2. Não incluir no pacote entregue
 
@@ -63,4 +63,4 @@ O `generate-secrets.sh` cobre parte, mas **não gera dois segredos críticos**. 
 - [ ] Subir limpo, logar com o admin, aplicar a licença gerada e confirmar que o
       plano correto ativa os frameworks certos.
 - [ ] Testar um framework **fora do plano** → deve aparecer 🔒 e bloquear a rota.
-- [ ] Confirmar que a tela de login usa o tema `tracado` e que não há chamada a CDN externa.
+- [ ] Confirmar que a tela de login usa o tema `hormos` e que não há chamada a CDN externa.
