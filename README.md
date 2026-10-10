@@ -136,20 +136,23 @@ O login local continua acessível em caso de contingência via
 
 ## Analista IA embarcado (offline)
 
-O instalador detecta a RAM disponível ao Docker e escolhe o **tier** de modelos
-(tudo local, nada sai do cliente — grave `OLLAMA_MODEL`/`VISION_MODEL` no `.env`
-para forçar um tier):
+O instalador detecta a RAM disponível ao Docker e escolhe o **tier** do LLM
+(tudo local, nada sai do cliente — grave `OLLAMA_MODEL` no `.env` para forçar):
 
-| RAM no Docker | LLM | Visão (fotos de catraca, salas, equipamentos) |
-|---|---|---|
-| < 6 GB | qwen2.5:1.5b | — |
-| 6–8 GB | qwen2.5:3b | qwen2.5vl:3b |
-| ≥ 8 GB | qwen2.5:7b | qwen2.5vl:3b (≥12 GB: qwen2.5vl:7b) |
+| RAM no Docker | LLM |
+|---|---|
+| < 6 GB | qwen2.5:1.5b |
+| 6–8 GB | qwen2.5:3b |
+| ≥ 8 GB | qwen2.5:7b |
 
 A correlação semântica usa **embeddings locais** (`nomic-embed-text`, ~300MB, todos
-os tiers) com TF-IDF como fallback determinístico. Evidências em **imagem sem texto**
-(catraca, portão, sala-cofre) são descritas pela IA de visão — a descrição classifica
-e correlaciona; o valor probatório continua sendo julgamento humano.
+os tiers) com TF-IDF como fallback determinístico.
+
+**Não há modelo de visão.** Evidência em imagem sem texto legível (catraca, portão,
+sala-cofre) é correlacionada pela **descrição que o usuário informa** — determinístico,
+instantâneo e sem custo de RAM. O modelo de visão foi testado e removido: somava
+3–5 GB ao lado do LLM, levava minutos a frio e entregava descrição genérica, de baixo
+valor probatório. Trade ruim para appliance vendido a cliente com hardware modesto.
 
 Dois estágios, sem nenhuma API externa:
 
@@ -181,13 +184,15 @@ Dois estágios, sem nenhuma API externa:
 
 | Edição | Frameworks | Analista IA · GAP · relatórios |
 |--------|-----------|-------------------------------|
-| **Comunidade** (padrão, sem chave) | ISO 27001/27002 (Anexo A + requisitos) + LGPD | — |
-| **Essencial** | Comunidade + CIS Controls v8 | ✔ |
+| **Comunidade** (padrão, sem chave) | ISO 27001/27002 — Anexo A + requisitos das cláusulas 4 a 10 | — |
+| **Essencial** | Comunidade + LGPD + CIS Controls v8 | ✔ |
 | **Avançado** | Todos (inclui NIST CSF, COBIT e ISO 42001) | ✔ |
 
 A Edição Comunidade é **gratuita e sem prazo**: registra o SGSI por completo em
-ISO 27001 e LGPD. O que a licença habilita é a inteligência sobre esse SGSI —
-o Analista IA, a análise de GAP, os relatórios executivos e a exportação.
+ISO 27001 — ativos, riscos, controles, políticas, evidências, não conformidades e
+planos. O que a licença habilita é a **inteligência sobre esse SGSI** (o Analista
+IA, a análise de GAP, os relatórios executivos e a exportação) e os **demais
+frameworks**, a começar pela LGPD.
 
 - A chave é assinada em **Ed25519** e validada **100% offline** — nada sai do cliente.
 - Aplicar: portal → ⚙ Configurações → **Licença** → colar a chave.
