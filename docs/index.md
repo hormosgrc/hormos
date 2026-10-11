@@ -15,7 +15,7 @@ do seu SGSI sai da sua rede**.
 > evidência e plano num fio só. O símbolo é esse fio, com duas contas.
 
 <p align="center">
-  <img src="img/hormos-grafo.svg" alt="Como o Hormos se conecta" width="100%">
+  <img src="img/hormos-cadeia.svg" alt="Da estratégia à evidência — a cadeia do SGSI" width="100%">
 </p>
 
 ## Documentação

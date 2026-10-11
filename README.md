@@ -14,7 +14,7 @@ IA local.
 
 
 <p align="center">
-  <img src="docs/img/hormos-grafo.svg" alt="Como o Hormos se conecta: as réguas leem o mesmo SGSI, a mesma evidência serve a várias delas, e o plano com eficácia comprovada derruba o risco." width="100%">
+  <img src="docs/img/hormos-cadeia.svg" alt="Da estratégia à evidência: as nove etapas do SGSI com a cláusula ISO de cada uma, a base única de dados e os resultados." width="100%">
 </p>
 
 O diagrama acima é gerado por `scripts/gerar-infografico.py` — os números saem
