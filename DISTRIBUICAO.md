@@ -38,12 +38,31 @@ pré-requisito do appliance. O cosign roda como contêiner:
 
 ```bash
 docker run --rm ghcr.io/sigstore/cosign/cosign:latest verify \
-  ghcr.io/hormosgrc/hormos-portal@sha256:<digest> \
-  --certificate-identity-regexp '.*' --certificate-oidc-issuer-regexp '.*'
+  ghcr.io/hormosgrc/hormos-portal:2.2.0 \
+  --certificate-identity 'sgduarte7@gmail.com' \
+  --certificate-oidc-issuer 'https://accounts.google.com'
 ```
 
-Exigir instalação de ferramenta para conferir procedência anula o plug-and-play:
-quem não instala, não confere — e a assinatura vira decoração.
+**A identidade tem de ser fixada, e isto não é detalhe.** A versão anterior
+desta página mandava verificar com `--certificate-identity-regexp '.*'`, que
+aceita QUALQUER assinante: provava que a imagem estava assinada por alguém,
+não que foi assinada por nós. Quem publicasse a própria imagem, assinada com
+a própria conta, passaria no teste. Assinatura que não prende identidade é
+decoração — exatamente o que ela deveria impedir.
+
+Saída esperada:
+
+```
+Verification for ghcr.io/hormosgrc/hormos-portal:2.2.0 --
+The following checks were performed on each of these signatures:
+  - The cosign claims were validated
+  - Existence of the claims in the transparency log was verified offline
+  - The code-signing certificate was verified using trusted certificate authority certificates
+```
+
+Exigir instalação de ferramenta para conferir procedência anularia o
+plug-and-play: quem não instala, não confere. Por isso o cosign roda como
+contêiner, com o Docker que o cliente já tem.
 
 ## Compilação do miolo
 
@@ -68,7 +87,7 @@ Toda instalação exibe, no rodapé de cada tela e no cabeçalho de **cada
 relatório impresso ou salvo em PDF**:
 
 ```
-Hormos v2.1.0 · Licenciado para <cliente> · LIC-000123 · instância C3D3E2957821
+Hormos v2.2.0 · Licenciado para <cliente> · LIC-000123 · instância C3D3E2957821
 ```
 
 A impressão da instância é derivada da **licença assinada** (cliente + código

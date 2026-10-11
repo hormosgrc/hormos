@@ -58,7 +58,12 @@ if [ "${PUBLICAR:-nao}" = "sim" ]; then
     echo "  O cliente verifica SEM instalar nada — ele já tem Docker:"
     echo "    docker run --rm ghcr.io/sigstore/cosign/cosign:latest verify \\"
     echo "      ${DIGEST} \\"
-    echo "      --certificate-identity-regexp '.*' --certificate-oidc-issuer-regexp '.*'"
+    # A identidade PRECISA ser fixada: com --certificate-identity-regexp '.*'
+    # o cliente só prova que a imagem foi assinada por ALGUÉM, não por nós —
+    # quem publicasse a própria imagem, assinada com a própria conta, passaria
+    # no teste. Assinatura que não prende identidade é decoração.
+    echo "      --certificate-identity '${ASSINANTE:-sgduarte7@gmail.com}' \\"
+    echo "      --certificate-oidc-issuer '${EMISSOR:-https://accounts.google.com}'"
   else
     echo "⚠  cosign não encontrado — imagem publicada SEM assinatura."
     echo "   Assine com o próprio Docker, sem instalar nada:"

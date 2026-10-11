@@ -48,7 +48,7 @@ fornecer como serviço gerenciado e contornar a chave de licença são vedados.
 
 ---
 
-# Hormos v2.1
+# Hormos v2.2.0
 
 **Plataforma de Governança, Riscos e Conformidade** — Multi-framework, self-hosted, sem licenciamento por usuário.
 
