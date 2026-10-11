@@ -31,6 +31,38 @@ repositórios próprios e privados.
 | `hormos-portal` | código do portal — vira a imagem distribuída | privado |
 | `hormos-licenciador` | emissão de licenças, chave privada Ed25519 | privado |
 
+## Requisitos
+
+| | mínimo | recomendado |
+|---|---|---|
+| **Sistema** | Linux, macOS ou Windows 10/11 | — |
+| **Docker** | Engine 24+ e Compose v2 | — |
+| **RAM livre** | **2 GB** (stack sem IA) | 8 GB+ (com o LLM completo) |
+| **Disco** | **4 GB** | 16 GB (com IA) |
+| **Portas** | 443 (e 80 só com domínio próprio) | — |
+| **Internet** | só para baixar as imagens na 1ª vez | — |
+
+Medido nesta instalação, não estimado: o stack sem IA ocupa **~1 GB de RAM**
+(Keycloak é o maior, 660 MB; o portal, 138 MB) e **~1,8 GB de imagens**.
+
+**Windows não precisa de Docker Desktop.** O `install.bat` instala WSL2 e o
+Docker Engine dentro dele — assim o licenciamento do Desktop (pago acima de
+250 funcionários ou US$ 10 mi de receita) não se aplica.
+
+O **Analista IA é opcional** e escolhe o modelo pela RAM disponível ao Docker:
+
+| RAM no Docker | LLM local | acrescenta ao disco |
+|---|---|---|
+| < 6 GB | qwen2.5:1.5b | ~8 GB |
+| 6–8 GB | qwen2.5:3b | ~9 GB |
+| ≥ 8 GB | qwen2.5:7b | ~12 GB |
+
+Sem o LLM o produto funciona inteiro: o **motor semântico** (embeddings
+locais, ~300 MB) roda em qualquer tier e é ele que faz a correlação. O LLM
+só refina a redação dos pareceres — os fatos vêm sempre do motor.
+
+**Nada sai da sua rede em nenhum tier.**
+
 ## Instalação (cliente)
 
 ```bash
