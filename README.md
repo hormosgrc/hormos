@@ -1,7 +1,8 @@
 # Hormos — Appliance
 
 Plataforma de GRC auto-hospedada: ISO 27001, LGPD, CIS Controls v8, NIST CSF,
-COBIT 2019 e ISO 42001, com correlação entre normas e IA local.
+COBIT 2019, ISO 42001 e **iGovTIC-JUD (CNJ)**, com correlação entre normas e
+IA local.
 
 > **ὅρμος** (*hórmos*), do grego: o ancoradouro abrigado onde o navio para no
 > meio da viagem — e também o colar, contas presas num mesmo fio. Os dois
@@ -62,8 +63,31 @@ fornecer como serviço gerenciado e contornar a chave de licença são vedados.
 | COBIT 2019 | 2019 | 41 objetivos (5 domínios) |
 | ISO/IEC 42001 | 2023 | 38 controles de IA |
 | LGPD | 2018 | 20 artigos-chave |
+| iGovTIC-JUD | ciclo 2026 | 238 subitens · 28 perguntas de TIC + 10 de negócio |
 
-**Total: 452+ controles pré-carregados + 20 mapeamentos cruzados**
+**Total: 690+ controles pré-carregados + 20 mapeamentos cruzados**
+
+### iGovTIC-JUD — o índice que o CNJ cobra do Judiciário
+
+Não é "mais um framework", e por isso tem tela própria. A régua é outra: a
+nota de cada subitem muda **por ano e por segmento** (TRT, TRE, Superiores,
+CNJ), e a evidência é julgada item a item — um subitem declarado sem prova
+**zera o item inteiro**. O Hormos cobre o ciclo completo:
+
+- **De onde você vem** — o resultado publicado do seu tribunal acompanha a
+  instalação (registro público do CNJ, 92 órgãos). Escolha a sigla e veja o
+  índice, o nível e quanto faltou em cada pergunta. Sem digitar nada e sem o
+  appliance falar com a internet.
+- **Ler o ciclo publicado** — a nota de cada pergunta restringe quais subitens
+  foram marcados: em ~44% delas a combinação é única, e o Hormos a reconstrói.
+  Onde o questionário mudou entre ciclos, ele diz que não é comparável em vez
+  de fingir que é.
+- **O que o seu SGSI já sustenta** — crosswalk curado com a ISO 27001: se o
+  controle está implementado e tem evidência na janela, o subitem é seguro de
+  declarar. Se não tem prova, vira aviso, não sugestão.
+- **Dossiê para o INTEGRA** — um anexo por item de conformidade, com capa
+  gerada, PDF pesquisável, trecho destacado e pré-voo com as regras que o CNJ
+  aplicaria.
 
 ## Funcionalidades
 

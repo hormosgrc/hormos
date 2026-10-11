@@ -2,7 +2,8 @@
 
 **Appliance de GRC auto-hospedado.** Roda inteiro na infraestrutura da sua
 empresa: ISO/IEC 27001, LGPD, CIS Controls v8, NIST CSF, COBIT 2019 e ISO 42001,
-com correlação entre as normas e inteligência artificial local — **nenhum dado
+mais o **iGovTIC-JUD** do CNJ, com correlação entre as normas e inteligência
+artificial local — **nenhum dado
 do seu SGSI sai da sua rede**.
 
 > **ὅρμος** (*hórmos*), do grego: o ancoradouro abrigado onde o navio para no
