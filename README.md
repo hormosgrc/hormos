@@ -12,6 +12,15 @@ IA local.
 > Hormos é a parada segura ao longo dela, com ativo, risco, controle,
 > evidência e plano num fio só. O símbolo é esse fio, com duas contas.
 
+
+<p align="center">
+  <img src="docs/img/hormos-grafo.svg" alt="Como o Hormos se conecta: as réguas leem o mesmo SGSI, a mesma evidência serve a várias delas, e o plano com eficácia comprovada derruba o risco." width="100%">
+</p>
+
+O diagrama acima é gerado por `scripts/gerar-infografico.py` — os números saem
+do catálogo, não são digitados: diagrama que afirma "238 subitens" não pode
+envelhecer em silêncio quando o ciclo mudar.
+
 **Este é o repositório público**: compose, gateway, autenticação, esquema de
 banco, instaladores e documentação. O código do portal e o licenciador vivem em
 repositórios próprios e privados.

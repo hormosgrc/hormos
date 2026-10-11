@@ -14,6 +14,10 @@ do seu SGSI sai da sua rede**.
 > Hormos é a parada segura ao longo dela, com ativo, risco, controle,
 > evidência e plano num fio só. O símbolo é esse fio, com duas contas.
 
+<p align="center">
+  <img src="img/hormos-grafo.svg" alt="Como o Hormos se conecta" width="100%">
+</p>
+
 ## Documentação
 
 - **[Como o Hormos pensa](modelo.md)** — o modelo: o que é cada coisa, por que
