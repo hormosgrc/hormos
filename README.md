@@ -42,6 +42,8 @@ repositórios próprios e privados.
 | **Portas** | 443 (e 80 só com domínio próprio) | — |
 | **Internet** | só para baixar as imagens na 1ª vez | — |
 
+Depois da instalação o appliance **não fala com a internet**. Nem a IA, nem o licenciamento (validado offline por assinatura Ed25519), nem a consulta ao registro público do CNJ — ele viaja dentro do produto. A contrapartida está dita em [iGovTIC-JUD](#igovtic-jud--o-índice-que-o-cnj-cobra-do-judiciário).
+
 Medido nesta instalação, não estimado: o stack sem IA ocupa **~1 GB de RAM**
 (Keycloak é o maior, 660 MB; o portal, 138 MB) e **~1,8 GB de imagens**.
 
@@ -116,9 +118,17 @@ CNJ), e a evidência é julgada item a item — um subitem declarado sem prova
 **zera o item inteiro**. O Hormos cobre o ciclo completo:
 
 - **De onde você vem** — o resultado publicado do seu tribunal acompanha a
-  instalação (registro público do CNJ, 92 órgãos). Escolha a sigla e veja o
-  índice, o nível e quanto faltou em cada pergunta. Sem digitar nada e sem o
-  appliance falar com a internet.
+  instalação (registro público do CNJ, 92 órgãos, ciclo 2024). Escolha a sigla
+  e veja o índice, o nível e quanto faltou em cada pergunta. Sem digitar nada
+  e **sem o appliance falar com a internet**: o registro é um arquivo dentro
+  da imagem, não uma consulta ao painel.
+
+  **A contrapartida:** como o dado viaja embarcado, ele **não se atualiza
+  sozinho**. Quando o CNJ publicar um ciclo novo, o registro correspondente
+  vem numa versão nova do produto. Quem precisar antecipar extrai por conta
+  própria com `ferramentas/igovtic_extrator/painel_cnj.py`, que fala com o
+  painel público do CNJ — essa ferramenta roda fora do appliance, de
+  propósito, e não é distribuída na imagem.
 - **Ler o ciclo publicado** — a nota de cada pergunta restringe quais subitens
   foram marcados: em ~44% delas a combinação é única, e o Hormos a reconstrói.
   Onde o questionário mudou entre ciclos, ele diz que não é comparável em vez
