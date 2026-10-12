@@ -36,6 +36,41 @@ aparece como bloqueador da certificação.
 marca da instância no cabeçalho.
 **O sistema cobra:** o relatório de evolução não traça tendência com um ponto só.
 
+### BACEN Res. CMN 4.893 — instituições autorizadas pelo Banco Central
+
+Chega por **Frameworks GRC**, mas tem três painéis próprios que os demais não
+têm, porque a régua é de regulador e não de norma de gestão.
+
+**Perfil da instituição.** Oito declarações que a própria resolução condiciona:
+tipo de instituição, se opera na RSFN (Pix/STR), se é participante de SMF, se
+contrata nuvem no exterior, se adota a política do conglomerado, se tem comitê
+de risco, se tem auditoria interna, se usa SaaS pela internet. Cada "não" marca
+os requisitos correspondentes como **não aplicáveis**, com a justificativa
+citando o artigo. Avaliação que você fez à mão **nunca é apagada** por isso.
+
+> O primeiro campo decide tudo: pelo art. 1º, parágrafo único, a 4.893 **não se
+> aplica** a instituição de pagamento, corretora, distribuidora nem
+> administradora de consórcio. Se for o seu caso, a tela avisa — e a régua
+> correta é a Res. BCB 85/2021.
+
+**Conformidade.** O veredito que o Banco Central lê: **atende / atende
+parcialmente / não atende / não aplicável**, com o motivo de cada um. O
+percentual é sobre o **exigível**, nunca sobre os 152 — pôr o inaplicável no
+denominador faz o número mentir para baixo. Atender exige maturidade 3 ou mais,
+evidência vigente e nenhum prazo em falta.
+
+**Prazos e periodicidade.** Quatro seções: obrigações disparadas por evento
+(cada contratação de nuvem cria uma, com prazo de dez dias), o ciclo anual do
+relatório, os periódicos e a guarda de cinco anos do art. 23. O veredito é
+sempre **calculado das duas datas** — não existe campo para declarar "no prazo"
+o que está fora.
+
+**Declaração de não ocorrência.** Para os oito requisitos em que a ausência do
+fato é legítima, você declara formalmente que nada ocorreu no exercício. Fica
+com o seu nome e a data: é isso que a torna formal.
+
+O **Relatório Anual** (art. 8º) sai em *Relatórios*.
+
 ## O SGSI
 
 ### Ativos de Informação — A.5.9, A.5.29, ISO 27005
@@ -119,3 +154,32 @@ opcional.
 **Seus dados são seus.** Cada registro tem exportação em CSV, e a exportação
 continua disponível mesmo com a licença vencida — nesse caso o sistema entra em
 somente leitura, sem nunca reter o que é seu.
+
+## Modo auditor (Edição Avançada)
+
+Só aparece quando o modo auditor está ligado em **Configurações da Empresa** —
+e só uma conta **Administrador** liga.
+
+### Empresas clientes
+
+A carteira. Cada cliente tem **banco de dados próprio**: não é um
+compartimento dentro do mesmo banco, é outro banco, e o PostgreSQL recusa a
+referência cruzada entre eles.
+
+A tabela traz o farol de cada um — **bom, atenção, crítico** — com nota,
+cobertura, maturidade, riscos altos, NC abertas e planos vencidos. Cliente sem
+avaliação aparece como **"sem dados"**, não como "crítico": são coisas
+diferentes. Banco que não responde aparece como **"indisponível"**, porque
+dizer que o cliente está mal quando o que caiu foi o banco seria mentir sobre
+ele.
+
+- **Nova empresa** cria o banco, replica o esquema e registra. A empresa nasce
+  vazia; dados de demonstração não entram em banco de cliente real.
+- **Entrar** passa a operar dentro daquele cliente. Enquanto você está lá, uma
+  faixa fixa no topo do menu diz em qual empresa você está — editar o cliente
+  errado achando que é outro é o pior erro possível aqui.
+- **Desativar** tira da operação e **não apaga nada**: o art. 23 da Res. CMN
+  4.893 manda guardar cinco anos, e contrato de auditoria costuma mandar mais.
+
+Entrar numa empresa cliente fica registrado no rastro de auditoria: é o momento
+em que alguém da firma passa a ver dado de um cliente específico.

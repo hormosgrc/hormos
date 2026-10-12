@@ -2,8 +2,8 @@
 
 **Appliance de GRC auto-hospedado.** Roda inteiro na infraestrutura da sua
 empresa: ISO/IEC 27001, LGPD, CIS Controls v8, NIST CSF, COBIT 2019 e ISO 42001,
-mais o **iGovTIC-JUD** do CNJ, com correlação entre as normas e inteligência
-artificial local — **nenhum dado
+mais a **Res. CMN 4.893 do Banco Central** e o **iGovTIC-JUD** do CNJ, com
+correlação entre as normas e inteligência artificial local — **nenhum dado
 do seu SGSI sai da sua rede**.
 
 > **ὅρμος** (*hórmos*), do grego: o ancoradouro abrigado onde o navio para no
@@ -37,12 +37,19 @@ do seu SGSI sai da sua rede**.
 | LGPD (RoPA, prazos legais, Encarregado) | — | ✓ | ✓ |
 | CIS Controls v8 | — | ✓ | ✓ |
 | NIST CSF · COBIT · ISO 42001 | — | — | ✓ |
+| **BACEN Res. CMN 4.893** · iGovTIC-JUD | — | — | ✓ |
+| **Modo auditor** (carteira de clientes) | — | — | ✓ |
 | Correlação entre normas | — | ✓ | ✓ |
 | Importação de framework próprio | — | — | ✓ |
 | Atualização de catálogo normativo | — | ✓ | ✓ |
 
 A **Edição Comunidade** não é demonstração nem versão limitada no tempo: é um
 SGSI ISO 27001 completo, para uma instância, para sempre, sem cadastro.
+
+O **modo auditor** da Edição Avançada é para quem presta o serviço: uma
+instalação atende vários clientes, cada um com **banco de dados próprio** — uma
+empresa não enxerga a outra, e o PostgreSQL recusa a referência cruzada entre
+os bancos. Liga-se em Configurações da Empresa, por conta Administrador.
 
 ## Licenciamento
 

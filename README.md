@@ -1,8 +1,9 @@
 # Hormos — Appliance
 
 Plataforma de GRC auto-hospedada: ISO 27001, LGPD, CIS Controls v8, NIST CSF,
-COBIT 2019, ISO 42001 e **iGovTIC-JUD (CNJ)**, com correlação entre normas e
-IA local.
+COBIT 2019, ISO 42001, **BACEN Res. CMN 4.893** e **iGovTIC-JUD (CNJ)**, com
+correlação entre normas e IA local. Opera **uma** empresa ou, no **modo
+auditor**, uma carteira de clientes com banco de dados separado para cada um.
 
 > **ὅρμος** (*hórmos*), do grego: o ancoradouro abrigado onde o navio para no
 > meio da viagem — e também o colar, contas presas num mesmo fio. Os dois
@@ -100,15 +101,67 @@ fornecer como serviço gerenciado e contornar a chave de licença são vedados.
 
 | Framework | Versão | Controles |
 |-----------|--------|-----------|
-| ISO/IEC 27001 | 2022 | 93 controles Anexo A |
+| ISO/IEC 27001 | 2022 | 93 controles do Anexo A + 23 requisitos (cláusulas 4–10) |
 | CIS Controls | v8 | 153 salvaguardas (IG1/IG2/IG3) |
-| NIST CSF | 2.0 | 107 subcategorias (6 funções) |
-| COBIT 2019 | 2019 | 41 objetivos (5 domínios) |
-| ISO/IEC 42001 | 2023 | 38 controles de IA |
-| LGPD | 2018 | 20 artigos-chave |
+| NIST CSF | 2.0 | 106 subcategorias (6 funções, incl. GOVERNAR) |
+| COBIT 2019 | 2019 | 40 objetivos (EDM, APO, BAI, DSS, MEA) |
+| ISO/IEC 42001 | 2023 | 38 controles do Anexo A + 26 requisitos |
+| LGPD | 2018 | 23 artigos-chave |
+| **BACEN Res. CMN 4.893** | **vigente em 19/12/2025** | **152 requisitos por artigo, parágrafo e inciso** |
 | iGovTIC-JUD | ciclo 2026 | 238 subitens · 28 perguntas de TIC + 10 de negócio |
 
-**Total: 690+ controles pré-carregados + 20 mapeamentos cruzados**
+**Total: 631 controles e requisitos pré-carregados**, mais os 238 subitens do
+iGovTIC-JUD, que têm catálogo próprio porque a régua dele é outra.
+
+### BACEN Res. CMN 4.893 — o que o Banco Central cobra das instituições
+
+Primeiro framework **regulatório brasileiro** do Hormos, na versão **vigente
+consolidada em 19/12/2025** (texto original alterado pelas Res. CMN 5.117/2024
+e 5.274/2025). O catálogo é a **resolução**, aberta por artigo, parágrafo e
+inciso — não o questionário de um auditor, que é sempre o recorte de um
+auditor para uma instituição num ano.
+
+**Âmbito, e este é o erro mais caro possível:** pelo art. 1º, parágrafo único,
+a 4.893 **não se aplica** a instituições de pagamento, corretoras,
+distribuidoras nem administradoras de consórcio — essas seguem a Res. BCB
+85/2021. Banco, financeira e SCD caem aqui. Aplicar a régua errada deixa as
+duas telas com a mesma aparência de certo, e por isso o produto avisa.
+
+- **Perfil da instituição** — oito declarações que a própria resolução
+  condiciona (participa da RSFN? contrata nuvem no exterior? tem comitê de
+  risco?). Cada resposta "não" marca os requisitos correspondentes como não
+  aplicáveis, com a justificativa citando o artigo — que é o que o art. 23
+  manda guardar cinco anos. Uma SCD enxuta deve **131 dos 152**, e sem isso o
+  índice mentiria para baixo.
+- **Veredito "atende / não atende"** — o Banco Central não lê maturidade de 0
+  a 5. O produto traduz, e diz o **motivo**: maturidade abaixo do limiar,
+  evidência ausente ou prazo em falta. Prazo estourado derruba para "não
+  atende" por mais madura que esteja a prática: o ato ocorreu no prazo ou não
+  ocorreu.
+- **Prazos e periodicidade** — 20 requisitos têm prazo, e documento anexado
+  não prova prazo. O art. 15, § 2º é "até dez dias após a contratação": o
+  contrato no acervo não diz quando a comunicação saiu. O Hormos guarda as
+  **duas datas** e calcula o veredito. Onde a norma **não fixa número**
+  ("periódico", "tempestiva"), o produto não inventa: a instituição declara e
+  ele cobra o declarado.
+- **Guarda de cinco anos (art. 23)** — não é maturidade de controle, é
+  propriedade do documento. E três incisos **não contam da emissão**: o VII
+  conta da extinção do contrato, o VIII da implementação e o X da execução do
+  teste.
+- **Relatório Anual de Segurança Cibernética (art. 8º)** — data-base de 31 de
+  dezembro, apresentado ao conselho até 31 de março. As cinco seções do § 1º
+  saem dos dados que você já tem. **Enquanto incompleto, ele se declara
+  incompleto** e aponta o que falta em cada inciso: o documento é assinado por
+  um diretor (art. 7º) e fica cinco anos à disposição do BC, então relatório
+  com conteúdo inventado é um problema assinado.
+- **Declaração de não ocorrência** — oito pedidos de auditoria terminam com
+  "caso não tenham ocorrido… apresentar confirmação formal". A ausência do
+  fato é, ela própria, uma obrigação, e sem registrá-la o auditor não
+  distingue "nada aconteceu" de "ninguém preencheu". Só vale onde o evento
+  **não é obrigatório**: não se declara ausência de teste de intrusão, que o
+  art. 22-A exige no mínimo anual.
+- **O que anexar** — cada requisito diz qual artefato o prova, derivado da
+  resolução.
 
 ### iGovTIC-JUD — o índice que o CNJ cobra do Judiciário
 
@@ -171,6 +224,64 @@ CNJ), e a evidência é julgada item a item — um subitem declarado sem prova
 - **RBAC**: perfis Administrador / Gestor de Risco / Avaliador / Auditor / Leitor (login via Keycloak SSO)
 - **Logs de Auditoria**: rastreabilidade completa de todas as ações
 - **Design Dark Premium**: fusão GRC Platform + SGSI Appliance
+
+## Modo auditor — uma instalação, várias empresas clientes
+
+O Hormos nasceu para **uma** empresa governar o próprio SGSI: é o **modo
+auditado**, e continua sendo o padrão. O **modo auditor** acrescenta a camada
+de quem presta o serviço para fora — firma de auditoria ou consultoria que
+acompanha dez, vinte clientes e precisa ver cada um por dentro e todos por
+fora.
+
+Liga-se em **Configurações da Empresa**, e **só por conta Administrador**:
+ligar um módulo que cria bancos de dados não é ação de qualquer conta. Exige
+**Edição Avançada**, e o gate é lido em tempo de uso — licença que decair
+devolve a instalação ao modo auditado sozinha, em vez de deixá-la num modo que
+a licença já não cobre.
+
+### Banco por empresa, não compartimento
+
+São dados de empresas que **concorrem entre si**, guardados por um terceiro.
+Um vazamento entre dois clientes de uma firma de auditoria não é defeito de
+software: é o fim do contrato.
+
+Cada empresa cliente tem o **seu próprio banco de dados**. Não é um
+compartimento dentro do mesmo banco — é outro banco, e o PostgreSQL **recusa**
+a referência cruzada entre eles. O isolamento deixa de depender de disciplina
+de código e passa a ser propriedade do servidor.
+
+### O que acontece ao criar uma empresa
+
+1. Um banco próprio é criado, com o prefixo `hormos_cli_` — olhando a lista de
+   bancos no servidor, fica óbvio o que é dado de cliente.
+2. O esquema é replicado do **mesmo DDL que construiu a instalação**.
+3. A empresa nasce **vazia**: dados de demonstração não entram em banco de
+   cliente real.
+4. Só então ela é registrada — registro é o que diz "esta empresa existe e
+   está pronta". Se a replicação falhar, o banco incompleto é removido e nada
+   fica registrado.
+
+Leva cerca de um segundo e meio por empresa.
+
+### Visão de fora
+
+Quem acompanha dez clientes não entra em dez telas para saber onde está o
+problema. O painel traz um farol por cliente — **bom, atenção, crítico** — com
+nota, cobertura, maturidade, riscos altos, NC abertas e planos vencidos.
+
+A nota é **metade cobertura, metade maturidade**: cobertura sozinha premiaria
+quem avaliou tudo com nota baixa. Cliente sem avaliação é **"sem dados"**, não
+"crítico" — são coisas diferentes; e banco que não responde é
+**"indisponível"**, porque dizer que o cliente está mal quando o que caiu foi
+o banco seria mentir sobre ele.
+
+Uma faixa fixa no menu diz **em qual cliente você está**. Não é decoração:
+editar o cliente errado achando que é outro é o pior erro possível aqui, e ele
+não avisa sozinho.
+
+**Desativar não apaga.** O art. 23 da Res. CMN 4.893 manda guardar cinco anos,
+e contrato de auditoria costuma mandar mais. Remover um banco é ato de
+servidor, deliberado.
 
 ## Temas (escuro premium ⇄ claro enterprise)
 
