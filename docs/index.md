@@ -49,7 +49,7 @@ SGSI ISO 27001 completo, para uma instância, para sempre, sem cadastro.
 O **modo auditor** da Edição Avançada é para quem presta o serviço: uma
 instalação atende vários clientes, cada um com **banco de dados próprio** — uma
 empresa não enxerga a outra, e o PostgreSQL recusa a referência cruzada entre
-os bancos. Liga-se em Configurações da Empresa, por conta Administrador.
+as bases. Liga-se em Configurações da Empresa, por conta Administrador.
 
 ## Licenciamento
 

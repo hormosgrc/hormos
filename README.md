@@ -246,19 +246,19 @@ Um vazamento entre dois clientes de uma firma de auditoria não é defeito de
 software: é o fim do contrato.
 
 Cada empresa cliente tem o **seu próprio banco de dados**. Não é um
-compartimento dentro do mesmo banco — é outro banco, e o PostgreSQL **recusa**
+compartimento dentro da mesma base — é outra base, e o PostgreSQL **recusa**
 a referência cruzada entre eles. O isolamento deixa de depender de disciplina
 de código e passa a ser propriedade do servidor.
 
 ### O que acontece ao criar uma empresa
 
-1. Um banco próprio é criado, com o prefixo `hormos_cli_` — olhando a lista de
-   bancos no servidor, fica óbvio o que é dado de cliente.
+1. Uma base de dados própria é criada, com o prefixo `hormos_cli_` — olhando a
+   lista no servidor, fica óbvio o que é dado de cliente.
 2. O esquema é replicado do **mesmo DDL que construiu a instalação**.
-3. A empresa nasce **vazia**: dados de demonstração não entram em banco de
+3. A empresa nasce **vazia**: dados de demonstração não entram em base de
    cliente real.
 4. Só então ela é registrada — registro é o que diz "esta empresa existe e
-   está pronta". Se a replicação falhar, o banco incompleto é removido e nada
+   está pronta". Se a replicação falhar, a base incompleta é removida e nada
    fica registrado.
 
 Leva cerca de um segundo e meio por empresa.
@@ -271,16 +271,17 @@ nota, cobertura, maturidade, riscos altos, NC abertas e planos vencidos.
 
 A nota é **metade cobertura, metade maturidade**: cobertura sozinha premiaria
 quem avaliou tudo com nota baixa. Cliente sem avaliação é **"sem dados"**, não
-"crítico" — são coisas diferentes; e banco que não responde é
-**"indisponível"**, porque dizer que o cliente está mal quando o que caiu foi
-o banco seria mentir sobre ele.
+"crítico" — são coisas diferentes, e chamar de crítico quem apenas não começou
+seria inventar um diagnóstico. Da mesma forma, cliente cuja base não responde
+no momento da consulta aparece como **"indisponível"**: é falha de leitura, não
+diagnóstico sobre ele.
 
 Uma faixa fixa no menu diz **em qual cliente você está**. Não é decoração:
 editar o cliente errado achando que é outro é o pior erro possível aqui, e ele
 não avisa sozinho.
 
 **Desativar não apaga.** O art. 23 da Res. CMN 4.893 manda guardar cinco anos,
-e contrato de auditoria costuma mandar mais. Remover um banco é ato de
+e contrato de auditoria costuma mandar mais. Remover uma base é ato de
 servidor, deliberado.
 
 ## Temas (escuro premium ⇄ claro enterprise)

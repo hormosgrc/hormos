@@ -163,18 +163,17 @@ e só uma conta **Administrador** liga.
 ### Empresas clientes
 
 A carteira. Cada cliente tem **banco de dados próprio**: não é um
-compartimento dentro do mesmo banco, é outro banco, e o PostgreSQL recusa a
+compartimento dentro da mesma base, é outra base, e o PostgreSQL recusa a
 referência cruzada entre eles.
 
 A tabela traz o farol de cada um — **bom, atenção, crítico** — com nota,
 cobertura, maturidade, riscos altos, NC abertas e planos vencidos. Cliente sem
 avaliação aparece como **"sem dados"**, não como "crítico": são coisas
-diferentes. Banco que não responde aparece como **"indisponível"**, porque
-dizer que o cliente está mal quando o que caiu foi o banco seria mentir sobre
-ele.
+diferentes. E cliente cuja base não responde no momento da consulta aparece
+como **"indisponível"** — é falha de leitura, não diagnóstico sobre ele.
 
-- **Nova empresa** cria o banco, replica o esquema e registra. A empresa nasce
-  vazia; dados de demonstração não entram em banco de cliente real.
+- **Nova empresa** cria a base, replica o esquema e registra. A empresa nasce
+  vazia; dados de demonstração não entram em base de cliente real.
 - **Entrar** passa a operar dentro daquele cliente. Enquanto você está lá, uma
   faixa fixa no topo do menu diz em qual empresa você está — editar o cliente
   errado achando que é outro é o pior erro possível aqui.
