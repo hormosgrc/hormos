@@ -34,22 +34,37 @@ echo "▸ Versão   : ${VERSION}${sujo}"
 echo "▸ Commit   : ${GIT_SHA}"
 echo "▸ Build id : ${BUILD_ID}"
 
-docker build \
-  --build-arg "VERSION=${VERSION}" \
-  --build-arg "GIT_SHA=${GIT_SHA}" \
-  --build-arg "BUILD_DATE=${BUILD_DATE}" \
-  --build-arg "BUILD_ID=${BUILD_ID}" \
-  -t "${IMAGEM}:${VERSION}" -t "${IMAGEM}:latest" \
-  "${PORTAL_SRC:-../hormos-portal}"
+# ── Plataformas ─────────────────────────────────────────────────────────────
+# `docker build` constrói só para a arquitetura de QUEM constrói. Como este
+# projeto é desenvolvido num Mac Apple Silicon, a imagem publicada saía
+# linux/arm64 — e um cliente em x86, que é a maioria dos servidores, não
+# conseguia rodar. O erro não aparece para quem publica: aparece na máquina do
+# cliente, no `docker pull`, e parece defeito do cliente.
+#
+# Com buildx e manifesto multiplataforma, o `docker pull` escolhe sozinho. A
+# travessia amd64 num host arm64 usa emulação e é LENTA — é o preço, e é menor
+# que o de distribuir uma imagem que metade dos clientes não roda.
+PLATAFORMAS="${PLATAFORMAS:-linux/amd64,linux/arm64}"
+echo "▸ Plataformas: ${PLATAFORMAS}"
 
-echo "▸ Imagem construída:"
-docker image inspect "${IMAGEM}:${VERSION}" \
-  --format '   {{index .Config.Labels "org.opencontainers.image.version"}} · commit {{index .Config.Labels "org.opencontainers.image.revision"}} · build {{index .Config.Labels "br.com.hormosgrc.build_id"}}'
-
+# Manifesto multiplataforma NÃO cabe no daemon local: ou se publica direto, ou
+# se constrói uma arquitetura só. Por isso o fluxo diverge aqui.
 if [ "${PUBLICAR:-nao}" = "sim" ]; then
-  docker push "${IMAGEM}:${VERSION}"
-  docker push "${IMAGEM}:latest"
-  DIGEST="$(docker image inspect "${IMAGEM}:${VERSION}" --format '{{index .RepoDigests 0}}')"
+  docker buildx build \
+    --platform "${PLATAFORMAS}" \
+    --build-arg "VERSION=${VERSION}" \
+    --build-arg "GIT_SHA=${GIT_SHA}" \
+    --build-arg "BUILD_DATE=${BUILD_DATE}" \
+    --build-arg "BUILD_ID=${BUILD_ID}" \
+    -t "${IMAGEM}:${VERSION}" -t "${IMAGEM}:latest" \
+    --push \
+    "${PORTAL_SRC:-../hormos-portal}"
+  echo "▸ Publicada em ${IMAGEM}:${VERSION} (e :latest)"
+  docker buildx imagetools inspect "${IMAGEM}:${VERSION}" \
+    --format '{{range .Manifest.Manifests}}   {{.Platform.OS}}/{{.Platform.Architecture}}{{println}}{{end}}' \
+    2>/dev/null | grep -v unknown || true
+  DIGEST="${IMAGEM}@$(docker buildx imagetools inspect "${IMAGEM}:${VERSION}" \
+    --format '{{.Manifest.Digest}}')"
   echo "▸ Publicada: ${DIGEST}"
 
   if command -v cosign >/dev/null 2>&1; then
@@ -71,5 +86,20 @@ if [ "${PUBLICAR:-nao}" = "sim" ]; then
     echo "   Sem assinatura, o cliente não tem como provar que a imagem é sua."
   fi
 else
-  echo "▸ Não publicada (defina PUBLICAR=sim para enviar ao registro e assinar)."
+  # Ensaio: UMA arquitetura, a do host, carregada no daemon local para poder
+  # inspecionar. Multiplataforma sem publicar não existe — o manifesto não cabe
+  # no daemon — e construir as duas para jogar fora seria desperdiçar a
+  # emulação.
+  docker buildx build \
+    --build-arg "VERSION=${VERSION}" \
+    --build-arg "GIT_SHA=${GIT_SHA}" \
+    --build-arg "BUILD_DATE=${BUILD_DATE}" \
+    --build-arg "BUILD_ID=${BUILD_ID}" \
+    -t "${IMAGEM}:${VERSION}" -t "${IMAGEM}:latest" \
+    --load \
+    "${PORTAL_SRC:-../hormos-portal}"
+  echo "▸ Imagem construída (só ${PLATAFORMAS%%,*} — ensaio local):"
+  docker image inspect "${IMAGEM}:${VERSION}" \
+    --format '   {{index .Config.Labels "org.opencontainers.image.version"}} · commit {{index .Config.Labels "org.opencontainers.image.revision"}} · build {{index .Config.Labels "br.com.hormosgrc.build_id"}}'
+  echo "▸ Não publicada (defina PUBLICAR=sim para enviar as duas arquiteturas e assinar)."
 fi
