@@ -95,6 +95,12 @@ services:
       # canal de controle: o app SÓ escreve o pedido de configuração (intent)
       # aqui; quem aplica é o serviço 'configurator' (o portal não tem docker).
       - config_control:/control
+      # DDL do esquema, só leitura. No modo auditor o portal cria um BANCO por
+      # empresa cliente e precisa replicar a estrutura — e não tem pg_dump.
+      # Monta-se o MESMO arquivo que construiu o banco original, em vez de
+      # manter uma cópia no portal: duas cópias divergiriam, e a que
+      # divergiria é a do cliente novo, que ninguém olha.
+      - ./postgres:/esquema:ro
     # ── Endurecimento do container ──────────────────────────────────────
     read_only: true                 # sistema de arquivos imutável
     tmpfs:                          # únicos pontos graváveis (além de uploads)
