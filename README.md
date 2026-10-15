@@ -76,6 +76,24 @@ install.bat           # Windows (instala WSL2 + Docker Engine)
 O compose puxa a **imagem publicada e assinada** — não constrói a partir do
 código-fonte.
 
+### Conferindo a assinatura antes de rodar
+
+Dizer que a imagem é assinada e não mostrar como conferir é pedir confiança.
+Você não precisa instalar o cosign: o Docker que já é pré-requisito basta.
+
+```bash
+docker run --rm ghcr.io/sigstore/cosign/cosign:latest verify \
+  ghcr.io/hormosgrc/hormos-portal:2.2.1 \
+  --certificate-identity 'sgduarte7@gmail.com' \
+  --certificate-oidc-issuer 'https://accounts.google.com'
+```
+
+A assinatura é **cosign keyless** (Sigstore) e o registro público de
+transparência guarda a prova. A identidade do assinante é **fixada** no
+comando de propósito: com `--certificate-identity-regexp '.*'` você provaria
+apenas que a imagem foi assinada por *alguém* — quem publicasse a própria
+imagem, assinada com a própria conta, passaria no teste.
+
 ## Desenvolvimento
 
 Clone o repositório do portal ao lado deste e use o override:
@@ -217,11 +235,16 @@ CNJ), e a evidência é julgada item a item — um subitem declarado sem prova
   e os registros do SGSI originados nela: NCs, riscos e planos são vinculados à auditoria de origem
   nos próprios formulários; achados do tipo NC convertem-se em NC formal com 1 clique; ao concluir,
   gera o **Relatório de Auditoria (Plano de Ação)** print-friendly para envio aos auditores
-- **Relatórios**: 6 relatórios print-friendly (PDF pelo navegador) + exportação CSV
+- **Relatórios**: 8 relatórios print-friendly (PDF pelo navegador) + exportação CSV —
+  executivo, GAP, auditoria, evolução, mapeamento multi-framework, LGPD,
+  **iGovTIC-JUD** e o **Relatório Anual do art. 8º da Res. CMN 4.893**
 - **Evolução Temporal**: snapshots diários de maturidade por framework
 - **SGSI ISO 27001**: Ativos, Riscos, NCs, Planos, SOA, Políticas
 - **Saneador Inteligente**: wizard transacional Ativo→Risco→NC→Plano
 - **RBAC**: perfis Administrador / Gestor de Risco / Avaliador / Auditor / Leitor (login via Keycloak SSO)
+- **API v1** (planos pagos): importar planilha, integrar com outro sistema e puxar dados.
+  Autenticação pelo Keycloak embarcado (`client_credentials`), **desligada por padrão** e em
+  **porta própria** — ver a seção adiante
 - **Logs de Auditoria**: rastreabilidade completa de todas as ações
 - **Design Dark Premium**: fusão GRC Platform + SGSI Appliance
 
@@ -284,6 +307,41 @@ não avisa sozinho.
 e contrato de auditoria costuma mandar mais. Remover uma base é ato de
 servidor, deliberado.
 
+## API v1 — desligada por padrão, e em porta própria
+
+Serve para **tirar a planilha do meio**: importar o inventário que já existe,
+manter o SGSI em dia a partir de outro sistema e puxar dados para onde a
+empresa já olha. Disponível nos planos **Essencial e Avançado**; na Edição
+Comunidade o registro do SGSI pela tela continua completo.
+
+Duas decisões sobre ela que mudam a operação:
+
+**Vem desligada.** A API serve ao começo — importação, migração — e depois
+costuma ficar esperando parada. Superfície parada é superfície exposta de
+graça, então ela nasce desligada e responde `404`: nem o endereço existe.
+Liga-se em **Configurações da Empresa → API v1**, por conta Administrador, e
+ligar ou desligar fica no rastro de auditoria.
+
+Quem já usava a API antes de atualizar continua com ela ligada: na primeira
+subida o Hormos procura chamadas de API no rastro e, achando, mantém o que
+estava funcionando.
+
+**Atende na porta 9443**, separada da porta das pessoas:
+
+```
+https://SEU-DOMINIO/            → portal (pessoas)
+https://SEU-DOMINIO:9443/api/v1 → API (integrações)
+```
+
+Isso existe para quem cuida da rede: a API pode ser fechada no firewall,
+restringida a uma VPN ou limitada por taxa no equipamento que a empresa já
+tem — sem depender de configuração do Hormos e sem que nada disso toque o
+acesso das pessoas. Chamar `/api/v1` na porta do portal devolve `404` com um
+aviso apontando a porta certa.
+
+Documentação completa, com os exemplos de `curl` e a criação do cliente de
+serviço no Keycloak: [`docs/api.md`](docs/api.md).
+
 ## Temas (escuro premium ⇄ claro enterprise)
 
 O botão 🌓 no topo alterna entre o tema escuro (padrão, premium) e o claro (enterprise),
@@ -296,7 +354,7 @@ a CDN, o visual é idêntico mesmo em appliance 100% offline.
 
 ## SSO, MFA e identidade (Keycloak)
 
-O console administrativo fica em **http://localhost:8086/admin** (usuário/senha:
+O console administrativo fica em **https://localhost/auth/admin** (usuário/senha:
 `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` do `.env`). O portal (módulo Usuários)
 tem um guia com atalhos; os principais caminhos no realm `sgsi`:
 
@@ -320,7 +378,7 @@ Para pular também o usuário/senha e ir **direto ao IdP corporativo** (SSO tota
 Authentication → flow **browser** → no passo *Identity Provider Redirector* →
 ⚙ config → **Default Identity Provider** = alias do IdP (ex.: `azure-ad`).
 O login local continua acessível em caso de contingência via
-`http://localhost:8086/realms/sgsi/account`.
+`https://localhost/auth/realms/sgsi/account`.
 
 ## Analista IA embarcado (offline)
 
@@ -491,7 +549,8 @@ e **atualiza as redirect URIs do client no Keycloak vivo** via kcadm.
 Pré-requisitos no cliente: **2 registros DNS** (`grc.cliente.com.br` e
 `auth.grc.cliente.com.br`) apontando para o servidor e **portas 80/443
 abertas** para a internet. É idempotente — rode de novo para trocar de domínio;
-os acessos locais `:8080`/`:8086` continuam ativos para contingência.
+o acesso local por `https://localhost` continua ativo para contingência
+(`http://localhost` e `:8080` redirecionam para lá).
 
 ## Atualização do v1.x
 
