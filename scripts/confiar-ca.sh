@@ -45,6 +45,11 @@ if [ -z "$REMOVER" ]; then
 fi
 
 SO="$(uname -s)"
+EH_WSL=""
+if [ "$SO" = "Linux" ] && { [ -n "${WSL_DISTRO_NAME:-}" ] \
+     || grep -qi microsoft /proc/version 2>/dev/null; }; then
+  EH_WSL=1
+fi
 
 # ── 2. Repositório de confiança do SISTEMA ──────────────────────────
 case "$SO" in
@@ -70,12 +75,49 @@ case "$SO" in
     if [ -n "$REMOVER" ]; then
       rm -f "$DEST" && $ATUALIZA >/dev/null 2>&1 && ok "CA removida do sistema"
     else
-      cp "$CA_FILE" "$DEST" && $ATUALIZA >/dev/null 2>&1 \
-        && ok "CA confiada no sistema (Chrome e Edge)" || { err "falha ao atualizar o repositório de CAs — rode com sudo"; exit 1; }
+      if cp "$CA_FILE" "$DEST" 2>/dev/null && $ATUALIZA >/dev/null 2>&1; then
+        ok "CA confiada no sistema (Chrome e Edge)"
+      elif [ -n "$EH_WSL" ]; then
+        # No WSL o repositório do Linux quase não importa: o navegador é o do
+        # Windows. Abortar aqui faria perder justamente o passo que resolve.
+        warn "repositório do Linux não atualizado (precisa de sudo) — seguindo para o do Windows"
+      else
+        err "falha ao atualizar o repositório de CAs — rode com sudo"; exit 1
+      fi
     fi
     ;;
   *) err "sistema não suportado por este script: $SO"; exit 1 ;;
 esac
+
+# ── 2b. WSL: o navegador está no WINDOWS, não aqui ──────────────────
+# Instalar a CA no repositório do Linux não tira o aviso de certificado:
+# quem abre https://localhost é o Chrome/Edge do Windows, que lê o
+# repositório do Windows. O WSL chama binário .exe direto (interop), então
+# dá para fazer isto daqui, sem o usuário trocar de janela.
+#
+# `-user` é deliberado: grava no repositório do USUÁRIO, que não exige
+# administrador. Chrome e Edge honram esse repositório. Sem o -user, o
+# certutil tentaria a máquina inteira e falharia num terminal comum.
+if [ -n "$EH_WSL" ]; then
+  if command -v certutil.exe >/dev/null 2>&1 && command -v wslpath >/dev/null 2>&1; then
+    CA_WIN="$(wslpath -w "$PWD/$CA_FILE" 2>/dev/null || true)"
+    if [ -n "$REMOVER" ]; then
+      certutil.exe -user -delstore Root "$CA_NOME" >/dev/null 2>&1 \
+        && ok "CA removida do repositório do Windows" \
+        || warn "CA não encontrada no repositório do Windows"
+    elif [ -n "$CA_WIN" ] && certutil.exe -user -addstore -f Root "$CA_WIN" >/dev/null 2>&1; then
+      ok "CA confiada no WINDOWS (Chrome e Edge) — é lá que o navegador roda"
+    else
+      warn "não consegui instalar a CA no Windows automaticamente"
+      msg  "    No PowerShell, na pasta do projeto:"
+      msg  "      certutil -user -addstore -f Root caddy\\Hormos-CA-local.crt"
+    fi
+  else
+    warn "WSL sem interoperabilidade com .exe — o navegador do Windows vai avisar"
+    msg  "    No PowerShell, na pasta do projeto:"
+    msg  "      certutil -user -addstore -f Root caddy\\Hormos-CA-local.crt"
+  fi
+fi
 
 # ── 3. Firefox: usa repositório PRÓPRIO (NSS), não o do sistema ─────
 # Em vez de mexer no banco NSS de cada perfil (frágil), usamos a política

@@ -433,18 +433,43 @@ Pré-requisitos (o instalador verifica e orienta): Docker em execução
 No Ubuntu: `sudo apt-get install -y docker.io docker-compose-v2 python3 openssl`
 e adicione-se ao grupo (`sudo usermod -aG docker $USER`, relogue).
 
-### Windows (Docker Desktop)
+### Windows
 
-1. Instale o [Docker Desktop](https://www.docker.com/products/docker-desktop/) e abra-o (aguarde ficar verde).
-2. **Dê 2 cliques no `install.bat`** na pasta do projeto — ele pergunta se quer
-   o Analista IA e se é reinstalação, e faz todo o resto (senhas, realm, subida).
-3. Não precisa de Python, OpenSSL nem WSL manual: o instalador usa só PowerShell + Docker.
+Há três caminhos, e **todos funcionam**. Escolha pelo que você já tem:
 
-Por linha de comando (opcional): `powershell -ExecutionPolicy Bypass -File install.ps1 -IA -Reset`.
+**1. Nada instalado — o caminho recomendado.** Clique com o botão direito em
+`install.bat` → **Executar como administrador**. Ele instala o WSL2 e o Docker
+Engine dentro dele, roda a instalação e ainda confia na CA no repositório do
+Windows (Chrome, Edge e Firefox). **Não precisa de Docker Desktop**, e por isso
+não há a exigência de licença comercial que ele impõe a empresas maiores.
+
+**2. Já tem Docker Desktop.** Ligue a integração com o WSL em *Settings →
+Resources → WSL integration*, abra o Ubuntu e rode `./install.sh`. O `docker`
+de dentro do WSL já fala com o daemon do Windows; nada é instalado no Linux.
+
+**3. Já está dentro do WSL com Ubuntu.** `./install.sh` resolve. Duas coisas
+que valem saber, porque são do WSL e não do Hormos:
+
+- **Grupo `docker`.** Instalar o Docker Engine não dá acesso ao socket ao seu
+  usuário na mesma sessão — credencial de grupo é fixada no login. O instalador
+  detecta isso, te põe no grupo e **se reabre já dentro dele**, sem você sair e
+  entrar no terminal. Se ainda assim pedir, rode `newgrp docker` e repita.
+- **systemd.** O serviço do Docker só sobe sozinho se o systemd estiver ligado,
+  e ele **não vem ligado por padrão**. Uma vez só:
+
+  ```bash
+  sudo sh -c 'printf "[boot]\nsystemd=true\n" >> /etc/wsl.conf'
+  ```
+
+  depois `wsl --shutdown` no PowerShell, reabra o Ubuntu e rode de novo. Sem
+  systemd, dá para subir à mão com `sudo service docker start`.
+
+A CA interna é instalada no repositório do **Windows** (é lá que o navegador
+roda), não só no do Linux — senão o aviso de certificado continuaria.
 
 **Acesso (todos os sistemas):**
-- Portal: http://localhost:8080
-- Keycloak: http://localhost:8086
+- Portal: <https://localhost> — `http://localhost` e `:8080` redirecionam
+- Login/Keycloak: <https://localhost/auth> (mesma origem, um só certificado)
 - Credenciais: exibidas ao final do instalador (e guardadas no `.env`)
 
 ### Produção com o domínio do cliente (HTTPS automático)

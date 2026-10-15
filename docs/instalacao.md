@@ -20,6 +20,27 @@ O instalador prepara o WSL2 e o Docker Engine dentro dele. Não é necessário
 Docker Desktop — e por isso não há a exigência de licença comercial que ele
 impõe a empresas maiores.
 
+### Já estou dentro do WSL, ou já tenho Docker Desktop
+
+Também funciona: abra o Ubuntu e rode `./install.sh`. Com Docker Desktop, ligue
+antes a integração em *Settings → Resources → WSL integration* — aí o `docker`
+do WSL fala com o daemon do Windows e nada é instalado no Linux.
+
+Duas particularidades do WSL que o instalador trata, mas convém conhecer:
+
+- **Grupo `docker`:** entrar no grupo não vale para a sessão em curso, porque
+  credencial de grupo é fixada no login. O instalador detecta a falta de
+  permissão, te adiciona ao grupo e se reabre já dentro dele. Se precisar à
+  mão: `newgrp docker`.
+- **systemd:** não vem ligado por padrão no WSL, e sem ele o serviço do Docker
+  não sobe sozinho. Habilite uma vez com
+  `sudo sh -c 'printf "[boot]\nsystemd=true\n" >> /etc/wsl.conf'`, rode
+  `wsl --shutdown` no PowerShell e reabra o Ubuntu.
+
+A autoridade certificadora interna é instalada no repositório do **Windows**,
+porque é lá que o navegador roda. Instalá-la apenas no Linux não removeria o
+aviso de certificado.
+
 ## Depois de instalar
 
 Abra <https://localhost>. O instalador cria e confia numa autoridade

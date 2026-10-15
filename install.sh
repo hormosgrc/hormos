@@ -25,13 +25,134 @@ done
 
 cd "$(dirname "$0")"
 
+# ── Plataforma ───────────────────────────────────────────────────────
+# O WSL é um caso à parte: é Linux para todos os efeitos, mas o navegador
+# que vai abrir o portal é o do WINDOWS, e o serviço do Docker depende de o
+# systemd estar habilitado em /etc/wsl.conf — que não é o padrão.
+SO="$(uname -s)"
+EH_WSL=""
+if [ "$SO" = "Linux" ] && { [ -n "${WSL_DISTRO_NAME:-}" ] \
+     || grep -qi microsoft /proc/version 2>/dev/null; }; then
+  EH_WSL=1
+fi
+SUDO=""; [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1 && SUDO="sudo"
+
+# ── Pré-requisitos: instala o Docker quando ausente ──────────────────
+# Vem ANTES das perguntas de propósito: não faz sentido pedir domínio e
+# e-mail do certificado para só depois descobrir que o Docker não roda.
+#
+# Linux: automatizável de ponta a ponta (script oficial da Docker).
+# macOS: precisa do Docker Desktop; instalamos via Homebrew quando houver,
+#        senão orientamos o download (a 1ª abertura é manual, por design da Apple).
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker não encontrado — instalando…"
+  if [ "$SO" = "Linux" ]; then
+    if [ "$(id -u)" -ne 0 ] && [ -z "$SUDO" ]; then
+      echo "✖ Preciso de root (ou sudo) para instalar o Docker."; exit 1
+    fi
+    curl -fsSL https://get.docker.com | $SUDO sh || {
+      echo "✖ Falha ao instalar o Docker. Veja https://docs.docker.com/engine/install/"; exit 1; }
+    echo "✓ Docker Engine instalado."
+  elif [ "$SO" = "Darwin" ]; then
+    if command -v brew >/dev/null 2>&1; then
+      echo "  instalando o Docker Desktop via Homebrew…"
+      brew install --cask docker || { echo "✖ Falha no brew. Baixe em https://www.docker.com/products/docker-desktop/"; exit 1; }
+      open -a Docker 2>/dev/null || true
+      echo "  aguardando o Docker Desktop iniciar…"
+    else
+      echo "✖ Docker não encontrado e o Homebrew não está disponível."
+      echo "  Baixe o Docker Desktop: https://www.docker.com/products/docker-desktop/"
+      echo "  Abra-o uma vez e rode este instalador novamente."; exit 1
+    fi
+  else
+    echo "✖ Sistema não suportado automaticamente: $SO"; exit 1
+  fi
+fi
+
+# ── O Docker responde? ───────────────────────────────────────────────
+# `docker info` falhar NÃO quer dizer que o daemon está fora do ar. No Linux
+# o motivo mais comum é PERMISSÃO: o socket pertence ao grupo `docker`, e um
+# usuário fora do grupo recebe "permission denied" com o daemon perfeitamente
+# de pé. Tratar os dois casos como um só manda a pessoa consertar o que não
+# está quebrado — foi exatamente o que aconteceu num WSL recém-instalado.
+docker_pronto(){ docker info >/dev/null 2>&1; }
+docker_erro(){ docker info 2>&1 >/dev/null || true; }
+
+if ! docker_pronto && [ "$SO" = "Linux" ]; then
+  $SUDO systemctl enable --now docker >/dev/null 2>&1 \
+    || $SUDO service docker start >/dev/null 2>&1 || true
+fi
+# Permissão: entra no grupo e REABRE o instalador já dentro dele.
+case "$(docker_erro)" in
+  *"permission denied"*|*"permissão negada"*|*"connect: permission"*)
+    echo "  O daemon está de pé, mas este usuário não alcança o socket."
+    if ! id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx docker; then
+      echo "  Adicionando $USER ao grupo docker…"
+      $SUDO usermod -aG docker "$USER" 2>/dev/null || true
+    fi
+    # Credencial de grupo é fixada no LOGIN: entrar no grupo não muda a sessão
+    # em curso. Sem reabrir, o instalador morreria aqui mesmo depois de ter
+    # consertado o problema, e a pessoa teria de sair e entrar no terminal.
+    # `sg` lê /etc/group direto, então não pede senha para quem já é membro.
+    if [ -z "${HORMOS_GRUPO:-}" ] && command -v sg >/dev/null 2>&1 \
+       && id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx docker; then
+      # Aspas simples no padrão POSIX, e NÃO printf '%q': o %q do bash emite
+      # $'...' para acento, e `sg -c` executa pelo /bin/sh — dash no Ubuntu —,
+      # que não entende essa sintaxe. Um caminho como /mnt/c/Users/João, comum
+      # justamente no WSL, viraria erro de sintaxe aqui.
+      _citar(){ printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
+      CMD="$(_citar "$PWD/$(basename "$0")")"
+      for _a in "$@"; do CMD="$CMD $(_citar "$_a")"; done
+      echo "  Reabrindo o instalador já dentro do grupo docker…"
+      exec sg docker -c "HORMOS_GRUPO=1 $CMD"
+    fi
+    ;;
+esac
+
+if ! docker_pronto; then
+  echo "  aguardando o daemon do Docker…"
+  for _i in $(seq 1 30); do docker_pronto && break; sleep 2; done
+fi
+
+docker_pronto || {
+  ERRO="$(docker_erro)"
+  echo "✖ Não consegui falar com o Docker."
+  [ -n "$ERRO" ] && echo "  Motivo: $(printf '%s' "$ERRO" | head -1)"
+  case "$ERRO" in
+    *"permission denied"*|*"permissão negada"*)
+      echo "  É PERMISSÃO, não daemon — o daemon está no ar."
+      echo "  Já te coloquei no grupo docker. Agora é só valer na sessão:"
+      echo "    saia e entre de novo no terminal, ou rode:  newgrp docker"
+      echo "  e repita:  ./install.sh"
+      ;;
+    *)
+      if [ -n "$EH_WSL" ]; then
+        echo "  No WSL o serviço do Docker só sobe sozinho com o systemd ligado,"
+        echo "  e ele NÃO vem ligado por padrão. Habilite uma vez:"
+        echo "    sudo sh -c 'printf \"[boot]\\nsystemd=true\\n\" >> /etc/wsl.conf'"
+        echo "  depois, no PowerShell do Windows:  wsl --shutdown"
+        echo "  reabra o Ubuntu e rode ./install.sh de novo."
+        echo "  (Sem systemd, dá para subir à mão:  sudo service docker start)"
+        echo
+        echo "  Alternativa: Docker Desktop no Windows com integração WSL ligada"
+        echo "  (Settings → Resources → WSL integration) — aí o docker daqui já"
+        echo "  fala com o daemon do Windows e nada precisa ser instalado aqui."
+      elif [ "$SO" = "Darwin" ]; then
+        echo "  macOS: abra o Docker Desktop, espere o ícone ficar estável e repita."
+      else
+        echo "  Linux: sudo systemctl start docker"
+      fi
+      ;;
+  esac
+  exit 1; }
+
 # ── Modo interativo: sem parâmetros e num terminal, o instalador pergunta ──
 if [ $# -eq 0 ] && [ -t 0 ]; then
   echo "═══════════════════════════════════════════"
   echo "   Hormos — Instalação guiada"
   echo "═══════════════════════════════════════════"
   echo "Onde o Hormos vai rodar?"
-  echo "  [1] Local / testes  (http://localhost:8080)"
+  echo "  [1] Local / testes  (https://localhost)"
   echo "  [2] Produção com o domínio do cliente (HTTPS automático)"
   printf "Escolha [1]: "; read -r R || true
   if [ "${R:-1}" = "2" ]; then
@@ -49,49 +170,6 @@ if [ $# -eq 0 ] && [ -t 0 ]; then
   case "${R:-}" in [sSyY]*) RESET="--reset" ;; esac
   echo
 fi
-
-# ── Pré-requisitos: instala o Docker quando ausente ──────────────────
-# Linux: automatizável de ponta a ponta (script oficial da Docker).
-# macOS: precisa do Docker Desktop; instalamos via Homebrew quando houver,
-#        senão orientamos o download (a 1ª abertura é manual, por design da Apple).
-if ! command -v docker >/dev/null 2>&1; then
-  SO="$(uname -s)"
-  echo "Docker não encontrado — instalando…"
-  if [ "$SO" = "Linux" ]; then
-    if [ "$(id -u)" -ne 0 ] && ! command -v sudo >/dev/null 2>&1; then
-      echo "✖ Preciso de root (ou sudo) para instalar o Docker."; exit 1
-    fi
-    SUDO=""; [ "$(id -u)" -ne 0 ] && SUDO="sudo"
-    curl -fsSL https://get.docker.com | $SUDO sh || {
-      echo "✖ Falha ao instalar o Docker. Veja https://docs.docker.com/engine/install/"; exit 1; }
-    $SUDO systemctl enable --now docker >/dev/null 2>&1 || $SUDO service docker start >/dev/null 2>&1 || true
-    # permite usar o docker sem sudo nas próximas vezes
-    [ -n "$SUDO" ] && $SUDO usermod -aG docker "$USER" 2>/dev/null || true
-    echo "✓ Docker Engine instalado."
-  elif [ "$SO" = "Darwin" ]; then
-    if command -v brew >/dev/null 2>&1; then
-      echo "  instalando o Docker Desktop via Homebrew…"
-      brew install --cask docker || { echo "✖ Falha no brew. Baixe em https://www.docker.com/products/docker-desktop/"; exit 1; }
-      open -a Docker 2>/dev/null || true
-      echo "  aguardando o Docker Desktop iniciar…"
-    else
-      echo "✖ Docker não encontrado e o Homebrew não está disponível."
-      echo "  Baixe o Docker Desktop: https://www.docker.com/products/docker-desktop/"
-      echo "  Abra-o uma vez e rode este instalador novamente."; exit 1
-    fi
-  else
-    echo "✖ Sistema não suportado automaticamente: $SO"; exit 1
-  fi
-fi
-# espera o daemon responder (no macOS o Desktop demora a subir)
-if ! docker info >/dev/null 2>&1; then
-  echo "  aguardando o daemon do Docker…"
-  for _i in $(seq 1 60); do docker info >/dev/null 2>&1 && break; sleep 2; done
-fi
-docker info >/dev/null 2>&1 || {
-  echo "✖ O daemon do Docker não respondeu."
-  echo "  Linux: sudo systemctl start docker  |  e adicione-se ao grupo: sudo usermod -aG docker \$USER"
-  echo "  macOS: abra o Docker Desktop e rode novamente."; exit 1; }
 
 # docker compose (plugin v2) com fallback para docker-compose (legado)
 if docker compose version >/dev/null 2>&1; then DC="docker compose";
