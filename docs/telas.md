@@ -32,8 +32,10 @@ distância até a meta.
 aparece como bloqueador da certificação.
 
 ### Relatórios
-**O sistema faz:** produz os seis relatórios que um auditor externo pede, com a
-marca da instância no cabeçalho.
+**O sistema faz:** produz os oito relatórios que um auditor externo pede, com a
+marca da instância no cabeçalho — executivo, GAP, auditoria, evolução,
+mapeamento multi-framework, LGPD, iGovTIC-JUD e o Relatório Anual do art. 8º
+da Res. CMN 4.893.
 **O sistema cobra:** o relatório de evolução não traça tendência com um ponto só.
 
 ### BACEN Res. CMN 4.893 — instituições autorizadas pelo Banco Central
@@ -70,6 +72,39 @@ fato é legítima, você declara formalmente que nada ocorreu no exercício. Fic
 com o seu nome e a data: é isso que a torna formal.
 
 O **Relatório Anual** (art. 8º) sai em *Relatórios*.
+
+### iGovTIC-JUD — órgãos do Poder Judiciário
+
+O diagnóstico anual de governança de TIC que o CNJ cobra (Res. CNJ 370/2021,
+art. 11). Tela própria, em **/igovtic**.
+
+São **28 perguntas de TIC** e **10 da área de negócio**, com a nota oficial de
+cada subitem para o segmento do órgão — a mesma resposta vale pontos diferentes
+conforme o segmento, e o catálogo traz as cinco colunas. Cada clique recalcula
+o índice, o nível e quanto falta para a faixa seguinte.
+
+**O sistema mostra DOIS índices:** o que você declarou e o que o CNJ daria. A
+conformidade é julgada **por item**, não por subitem: um subitem declarado sem
+evidência válida no período zera o item inteiro — inclusive o que estava
+provado. Ver os dois lado a lado é a diferença entre saber a nota e descobri-la
+depois do envio.
+
+Ao lado de cada subitem, o Hormos mostra **o que o SGSI já comprova**: o
+crosswalk curado liga 132 dos 208 subitens de TIC a controles da ISO 27001 —
+e, onde a 27001 não tem o que dizer, à ISO 42001 (modelos de IA) e à LGPD. O
+resto é faixa percentual ou pesquisa de percepção, que não têm equivalente em
+norma e ficam sem âncora de propósito.
+
+### Envio ao INTEGRA
+
+O CNJ não recebe um relatório: recebe **um anexo por item de conformidade**,
+submetido no INTEGRA. A tela lista os **31 anexos**, confere as regras de forma
+de cada um e baixa o arquivo pronto — PDF único com a capa obrigatória, ou ZIP
+quando o item também exige a planilha-modelo do CNJ.
+
+Confere antes do envio o que reprova por forma: capa ausente, PDF sem OCR,
+evidência fora do período e planilha-modelo alterada. E destaca no PDF o trecho
+que prova cada resposta, citando a página na capa.
 
 ## O SGSI
 
@@ -154,6 +189,30 @@ opcional.
 **Seus dados são seus.** Cada registro tem exportação em CSV, e a exportação
 continua disponível mesmo com a licença vencida — nesse caso o sistema entra em
 somente leitura, sem nunca reter o que é seu.
+
+## API v1 — não é tela, e por isso some do guia
+
+Quem procura aqui e não acha conclui que o produto não tem. Tem: importar
+planilha, integrar com outro sistema e puxar dados, nos planos **Essencial e
+Avançado**. A autenticação usa o Keycloak embarcado (`client_credentials`),
+sem componente novo.
+
+Duas coisas sobre ela que mudam a operação:
+
+**Vem desligada.** Serve ao começo — importação, migração — e depois costuma
+ficar esperando parada. Desligada responde `404`: nem o endereço existe.
+Liga-se em **Configurações da Empresa → API v1**, por conta Administrador, e a
+troca fica no rastro de auditoria. Quem já usava a API antes de atualizar
+continua com ela ligada.
+
+**Atende na porta 9443**, separada da porta das pessoas. Isso existe para quem
+cuida da rede: a API pode ser fechada no firewall, restringida a uma VPN ou
+limitada por taxa no equipamento que a empresa já tem, sem que nada disso toque
+o acesso das pessoas. Chamar `/api/v1` na porta do portal devolve `404`
+apontando a porta certa.
+
+Os exemplos de `curl` e a criação do cliente de serviço no Keycloak estão em
+**[API v1](api.md)**.
 
 ## Modo auditor (Edição Avançada)
 

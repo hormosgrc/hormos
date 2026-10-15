@@ -121,7 +121,8 @@ reescreveria a história.
 | Incidente com dado pessoal | Prazos legais | inicia 3 dias úteis e 15 dias |
 | Achado de auditoria | Não conformidade | referência, descrição e a auditoria de origem |
 | Causa raiz | Reincidência | compara com NCs anteriores e avisa se a causa voltou |
-| Evidência no Anexo A | CIS e NIST | a mesma evidência conta nos controles equivalentes |
+| Evidência no Anexo A | todo framework ativo | a mesma evidência conta nos controles equivalentes — hoje o motor compara contra 654 critérios de 7 frameworks, não só CIS e NIST |
+| Evidência do SGSI | subitem do iGovTIC | o crosswalk curado mostra, ao lado da pergunta do CNJ, o que a 27001 (ou a 42001, ou a LGPD) já comprova |
 | Análise crítica | Próximo ciclo | as decisões viram a entrada 9.3.2(a) seguinte |
 
 ## Por onde começar

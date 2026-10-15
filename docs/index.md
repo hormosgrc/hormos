@@ -41,6 +41,7 @@ do seu SGSI sai da sua rede**.
 | NIST CSF · COBIT · ISO 42001 | — | — | ✓ |
 | **BACEN Res. CMN 4.893** · iGovTIC-JUD | — | — | ✓ |
 | **Modo auditor** (carteira de clientes) | — | — | ✓ |
+| **API v1** (desligada por padrão, porta 9443) | — | ✓ | ✓ |
 | Correlação entre normas | — | ✓ | ✓ |
 | Importação de framework próprio | — | — | ✓ |
 | Atualização de catálogo normativo | — | ✓ | ✓ |
