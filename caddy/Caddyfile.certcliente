@@ -34,11 +34,48 @@ __PORTAL_DOMAIN__ {
     tls /certs/portal.crt /certs/portal.key
     import headers
     import strip_auth
-    reverse_proxy oauth2-portal:4180
+    # A API NÃO atende na porta das pessoas: ela tem a 9443. Separar é o que
+    # permite ao pessoal de rede fechar ou limitar a API sem tocar no portal, e
+    # sem o Hormos precisar de um Caddy compilado com módulo de terceiro.
+    handle /api/v1/* {
+        respond "{\"erro\": \"A API v1 atende na porta 9443 desta instalacao.\"}" 404 {
+            close
+        }
+    }
+    handle {
+        reverse_proxy oauth2-portal:4180
+    }
 }
 __AUTH_DOMAIN__ {
     tls /certs/portal.crt /certs/portal.key
     import headers
     import strip_auth
     reverse_proxy keycloak:8080
+}
+
+# ── API v1 — PORTA PRÓPRIA ────────────────────────────────────────────────
+# Vai DIRETO ao portal, sem o oauth2-proxy: a API se autentica por
+# `Authorization: Bearer <token>` do Keycloak, validado pelo próprio portal
+# contra o JWKS. O oauth2-proxy existe para sessão de navegador (cookie), que
+# API não tem.
+#
+# `import strip_auth` é OBRIGATÓRIO, não decoração: remove os headers de
+# identidade que o cliente possa enviar — sem isso alguém mandaria
+# `X-Forwarded-Email: admin@...` numa porta exposta de propósito — e injeta o
+# X-Portal-Secret, sem o qual o portal recusa tudo com 401.
+#
+# Desligada no painel de Administração, a API responde 404 antes de qualquer
+# autenticação: a porta fica aberta e inútil, que é o estado desejado.
+__PORTAL_DOMAIN__:9443 {
+    tls /certs/portal.crt /certs/portal.key
+    import headers
+    import strip_auth
+    handle /api/v1/* {
+        reverse_proxy sgsi-portal:5000
+    }
+    handle {
+        respond "{\"erro\": \"Esta porta atende apenas /api/v1.\"}" 404 {
+            close
+        }
+    }
 }

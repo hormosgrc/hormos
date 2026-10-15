@@ -26,7 +26,9 @@ do seu SGSI sai da sua rede**.
   sozinho e o que ele vai cobrar de você.
 - **[Instalação](instalacao.md)** — Linux, macOS e Windows.
 - **[API v1](api.md)** — importar planilha, integrar com outro sistema e puxar
-  dados. Autenticação pelo Keycloak que já vem no appliance.
+  dados. Autenticação pelo Keycloak que já vem no appliance. Vem **desligada**
+  e atende em **porta própria** (9443), para o firewall da empresa poder
+  tratá-la sem tocar no acesso das pessoas.
 
 ## Edições
 

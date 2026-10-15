@@ -125,7 +125,12 @@ services:
     image: caddy:2-alpine
     container_name: sgsi_caddy
     restart: unless-stopped
-    ports: ["443:443", "80:80", "8080:8080"]
+    # 9443 = API v1, em porta PRÓPRIA. Separada da porta das pessoas para que
+    # quem cuida da rede possa fechá-la ou limitá-la com o que já usa (firewall,
+    # WAF, VPN) sem depender de configuração do Hormos — e sem exigir um Caddy
+    # compilado com módulo de rate limit de terceiro. Desligada no painel de
+    # Administração, a porta fica aberta e inútil: responde 404.
+    ports: ["443:443", "80:80", "8080:8080", "9443:9443"]
     environment:
       PORTAL_SHARED_SECRET: ${PORTAL_SHARED_SECRET:-}
     volumes:

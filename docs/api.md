@@ -7,6 +7,39 @@ empresa já olha.
 **Disponível nos planos Essencial e Avançado.** Na Edição Comunidade a API
 responde `403` — o registro do SGSI pela tela continua completo e gratuito.
 
+## Ela vem DESLIGADA, e numa porta própria
+
+Duas decisões que mudam como você a usa:
+
+**1. Desligada por padrão.** A API serve ao começo — importar a planilha que já
+existe, migrar de outro sistema — e depois costuma só esperar parada. Superfície
+parada é superfície exposta de graça, então ela nasce desligada e responde
+`404`: nem o endereço existe. Liga-se em **Configurações da Empresa → API v1**,
+por conta Administrador, e ligar ou desligar fica no rastro de auditoria.
+
+Se você já usava a API antes de atualizar, ela continua ligada: na primeira
+subida o Hormos procura chamadas de API no rastro de auditoria e, achando,
+mantém o que estava funcionando. Não é adivinhação — o ator da API é gravado
+como `api:<clientId>`.
+
+**2. Porta própria: 9443.** A API não atende na porta das pessoas. O portal fica
+em `443` e a API em `9443`, na mesma máquina:
+
+```
+https://SEU-DOMINIO/            → portal (pessoas)
+https://SEU-DOMINIO:9443/api/v1 → API (integrações)
+```
+
+Isso existe para quem cuida da rede: a API pode ser fechada no firewall,
+restringida a uma VPN ou limitada por taxa no equipamento que a empresa já
+tem — sem depender de configuração do Hormos e sem que nada disso toque o
+acesso das pessoas. Chamar `/api/v1` na porta do portal devolve `404` com um
+aviso apontando a porta certa.
+
+Em todos os exemplos abaixo, troque `https://SEU-DOMINIO/api/v1` por
+`https://SEU-DOMINIO:9443/api/v1`. O endereço do **token** continua no portal
+(`/auth/...`), porque quem emite token é o Keycloak, não a API.
+
 ---
 
 ## Autenticação
@@ -59,7 +92,7 @@ proposital: token vazado tem validade curta.
 
 ```bash
 curl -H "Authorization: Bearer SEU_TOKEN" \
-     "https://SEU-DOMINIO/api/v1/saude"
+     "https://SEU-DOMINIO:9443/api/v1/saude"
 ```
 
 ---
@@ -161,7 +194,7 @@ Requer o papel **`api-escrita`**.
 ### Criar um
 
 ```bash
-curl -X POST "https://SEU-DOMINIO/api/v1/ativos" \
+curl -X POST "https://SEU-DOMINIO:9443/api/v1/ativos" \
   -H "Authorization: Bearer SEU_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -184,7 +217,7 @@ no corpo é recusado — aceitar produziria colisão silenciosa entre integraç�
 Mande uma **lista** em vez de um objeto. É o caminho da migração de planilha.
 
 ```bash
-curl -X POST "https://SEU-DOMINIO/api/v1/ativos" \
+curl -X POST "https://SEU-DOMINIO:9443/api/v1/ativos" \
   -H "Authorization: Bearer SEU_TOKEN" \
   -H "Content-Type: application/json" \
   -d '[ {"nome":"Notebook Diretoria","natureza":"Suporte"},
@@ -211,7 +244,7 @@ Limite de **500 itens por lote**. Acima disso, `413` — divida em partes.
 ### Atualizar
 
 ```bash
-curl -X PATCH "https://SEU-DOMINIO/api/v1/planos/PA-0042" \
+curl -X PATCH "https://SEU-DOMINIO:9443/api/v1/planos/PA-0042" \
   -H "Authorization: Bearer SEU_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"progresso": 80, "status": "Em Andamento"}'
