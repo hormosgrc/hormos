@@ -32,7 +32,7 @@ cd "$(dirname "$0")"
 # ── O modelo do Analista IA ─────────────────────────────────────────────────
 # UM lugar. Trocar o modelo é trocar estas duas linhas (e a imagem publicada,
 # porque o padrão também vive no docker-compose.yml e no ia_llm.py).
-IA_MODELO="${IA_MODELO:-qwen2.5:7b}"
+IA_MODELO="${IA_MODELO:-qwen3:8b}"
 IA_RAM_MINIMA="${IA_RAM_MINIMA:-8}"
 
 SO="$(uname -s)"

@@ -61,7 +61,9 @@ a redação dos pareceres em linguagem natural.
 | **GPU** | **não é necessária** | não é necessária |
 | **Disco** | 16 GB | 20 GB |
 
-**Não existe versão reduzida da IA.** O Hormos usa **um** modelo para tudo —
+**Não existe versão reduzida da IA.** O Hormos usa **um** modelo para tudo — o
+**Qwen3-8B**, de 2025, escolhido em medição contra o Qwen2.5-7B que o produto
+usava antes (ver [Analista IA embarcado](#analista-ia-embarcado-offline)) —
 parecer de risco, causa raiz, não conformidade, plano — e não há tarefa leve
 despachada para um modelo menor. Já houve uma escada (7B / 3B / 1.5B por RAM
 disponível) e ela foi removida: o modelo pequeno não entregava "menos IA",
@@ -90,7 +92,7 @@ Medido nesta instalação, não estimado: o stack sem IA ocupa **~1 GB de RAM**
 Docker Engine dentro dele — assim o licenciamento do Desktop (pago acima de
 250 funcionários ou US$ 10 mi de receita) não se aplica.
 
-O **Analista IA é opcional** e usa **um único modelo**, da classe 7–8B, que
+O **Analista IA é opcional** e usa **um único modelo** — o **Qwen3-8B** — que
 exige 8 GB de RAM livres ao Docker. Abaixo disso o instalador recusa a IA e
 segue sem ela — não há versão reduzida (ver [Requisitos](#requisitos)).
 
@@ -417,15 +419,28 @@ O login local continua acessível em caso de contingência via
 
 ## Analista IA embarcado (offline)
 
-Tudo local, nada sai do cliente. O instalador confere a RAM disponível ao
-Docker e, havendo 8 GB, baixa o modelo; abaixo disso recusa a IA em vez de
-instalar um modelo menor (`OLLAMA_MODEL` no `.env` força outro, por sua conta).
+Tudo local, nada sai do cliente. O modelo é o **Qwen3-8B** (`qwen3:8b`,
+~5,2 GB). O instalador confere a RAM disponível ao Docker e, havendo 8 GB,
+baixa o modelo; abaixo disso recusa a IA em vez de instalar um modelo menor
+(`OLLAMA_MODEL` no `.env` força outro, por sua conta).
 
-Medido nesta instalação, num Apple M1, com o parecer de um risco que lê o grafo
-inteiro: **3,1 tokens/s**, ~350 tokens por parecer, **cerca de 2 minutos**. Num
-processador mais modesto, na faixa de 1,5 token/s, conte ~4 minutos. A geração
-acontece em segundo plano e a tela mostra em que fase está — mas é bom saber a
-ordem de grandeza antes de achar que travou.
+**O raciocínio do modelo fica desligado**, e isso é medição, não preferência.
+O Qwen3 "pensa" antes de responder e faz isso por padrão. No mesmo parecer, na
+mesma máquina, mudando só essa variável:
+
+| | tempo | resultado |
+|---|---|---|
+| pensando | **706 s** | pensou 2.394 caracteres para escrever 1.001 |
+| sem pensar | **236 s** | escreveu 1.229 caracteres, texto mais completo |
+
+Três vezes mais rápido **e** melhor. Faz sentido: quando o texto chega ao
+modelo, o raciocínio já aconteceu — foi o motor determinístico que leu o grafo,
+encontrou a reincidência e separou o que tem lastro do que não tem. Ao modelo
+resta **redigir**, e redigir não precisa de cadeia de pensamento.
+
+Medido num Apple M1: **cerca de 4 minutos** por parecer de risco com o grafo
+inteiro. A geração roda em segundo plano e a tela mostra em que fase está — mas
+é bom saber a ordem de grandeza antes de achar que travou.
 
 A correlação semântica usa **embeddings locais** (`nomic-embed-text`, ~300 MB)
 com TF-IDF como fallback determinístico — e ela é rápida, não depende do LLM.
@@ -450,7 +465,7 @@ Dois estágios, sem nenhuma API externa:
    Ou manualmente:
    ```bash
    docker compose --profile ia up -d
-   docker compose exec ollama ollama pull qwen2.5:7b   # ~4,7GB, roda em CPU
+   docker compose exec ollama ollama pull qwen3:8b   # ~5,2GB, roda em CPU
    ```
    Sem o serviço, tudo funciona com os textos determinísticos (degradação graciosa).
    Modelo configurável via `OLLAMA_MODEL` no `.env`.

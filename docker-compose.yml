@@ -89,7 +89,7 @@ services:
       OLLAMA_URL: http://ollama:11434
       # O Hormos usa UM modelo para tudo; não há tier menor. O padrão aqui é o
       # mesmo do install.sh e do ia_llm.py — trocar o modelo exige trocar os três.
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:8b}
       EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
       VISION_MODEL: ${VISION_MODEL:-}
     volumes:
@@ -163,9 +163,17 @@ services:
     networks: [sgsi_internal]
   # ── Analista IA (Estágio 2, OPCIONAL): LLM local — ativar com --profile ia ──
   # docker compose --profile ia up -d
-  # docker compose exec ollama ollama pull qwen2.5:1.5b
+  # docker compose exec ollama ollama pull qwen3:8b
   ollama:
-    image: ollama/ollama:latest
+    # Versão FIXA, não `latest`. O portal manda `think: false` em toda geração,
+    # e a API do Ollama ACEITA E IGNORA campo que não conhece — testado, devolve
+    # HTTP 200. Num Ollama antigo o raciocínio ficaria ligado por padrão e cada
+    # parecer passaria de ~4 para ~12 minutos, sem erro em lugar nenhum.
+    # Alvo móvel num appliance assinado também vale pelo contrário: a imagem é
+    # distribuída com procedência, e `latest` muda o que o cliente recebe sem
+    # que nada no nosso repositório mude. 0.33.2 é a versão onde a medição do
+    # modelo foi feita.
+    image: ollama/ollama:0.33.2
     container_name: sgsi_ollama
     profiles: ["ia"]
     restart: unless-stopped
