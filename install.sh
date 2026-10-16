@@ -29,6 +29,12 @@ cd "$(dirname "$0")"
 # O WSL é um caso à parte: é Linux para todos os efeitos, mas o navegador
 # que vai abrir o portal é o do WINDOWS, e o serviço do Docker depende de o
 # systemd estar habilitado em /etc/wsl.conf — que não é o padrão.
+# ── O modelo do Analista IA ─────────────────────────────────────────────────
+# UM lugar. Trocar o modelo é trocar estas duas linhas (e a imagem publicada,
+# porque o padrão também vive no docker-compose.yml e no ia_llm.py).
+IA_MODELO="${IA_MODELO:-qwen2.5:7b}"
+IA_RAM_MINIMA="${IA_RAM_MINIMA:-8}"
+
 SO="$(uname -s)"
 EH_WSL=""
 if [ "$SO" = "Linux" ] && { [ -n "${WSL_DISTRO_NAME:-}" ] \
@@ -214,25 +220,41 @@ sleep 15
 # da tela de login vive no banco do Keycloak e não acompanha o arquivo.
 ./scripts/sincronizar-marca-keycloak.sh || true
 
-# Analista IA: tier automático por RAM + download dos modelos (idempotente)
+# ── Analista IA: UM modelo, uma régua ───────────────────────────────────────
+# Havia três tiers por RAM (7b / 3b / 1.5b). A escada foi REMOVIDA, e não por
+# simplificação estética: o produto inteiro roda num único OLLAMA_MODEL — não
+# existe tarefa leve despachada para modelo menor. Então o tier pequeno não era
+# "menos IA", era o MESMO parecer, pior. E pior de forma composta: contexto_max()
+# mandava 320 caracteres ao 1.5b contra 900 ao 7b/8b, ou seja, modelo mais fraco
+# recebendo menos informação.
+#
+# O Hormos analisa grafo de SGSI e assina um parecer que vai a auditor. Entregar
+# isso num 1.5b não é "funcionar com pouca memória": é entregar texto ruim com
+# a nossa marca. Melhor dizer que exige 8 GB e não rodar onde não cabe.
 if [ "$IA" = "1" ]; then
-  # ── Tier por RAM disponível ao Docker (respeita OLLAMA_MODEL já definido) ──
   MEM_BYTES="$(docker info --format '{{.MemTotal}}' 2>/dev/null || echo 0)"
   MEM_GB=$(( MEM_BYTES / 1073741824 ))
+  if [ "$MEM_GB" -lt "$IA_RAM_MINIMA" ]; then
+    echo "✖ O Analista IA precisa de ${IA_RAM_MINIMA} GB de RAM disponíveis ao Docker."
+    echo "  Este Docker tem ${MEM_GB} GB."
+    echo
+    echo "  Não há modelo menor: o Hormos usa UM modelo para tudo, e um modelo"
+    echo "  pequeno devolveria parecer de qualidade inferior com a sua marca."
+    echo "  Aumente a memória do Docker (Settings → Resources) e rode de novo,"
+    echo "  ou instale sem o Analista IA — o motor semântico embarcado continua"
+    echo "  funcionando e não depende de LLM."
+    exit 1
+  fi
   # Modelo de VISÃO desativado por padrão: em appliance vendido, o vl:3b/7b soma
   # ~3–5GB de RAM ao lado do LLM e entrega descrição genérica de pouco valor.
   # Fotos sem texto (catraca, sala-cofre) são correlacionadas pela DESCRIÇÃO que
   # o usuário informa — determinístico, instantâneo, 0 GB extra.
   if ! grep -q '^OLLAMA_MODEL=' .env; then
-    if   [ "$MEM_GB" -ge 8 ]; then LLM="qwen2.5:7b";   TIER="completo"
-    elif [ "$MEM_GB" -ge 6 ]; then LLM="qwen2.5:3b";   TIER="intermediário"
-    else                           LLM="qwen2.5:1.5b"; TIER="básico"; fi
-    echo "Analista IA: ${MEM_GB}GB de RAM no Docker → tier ${TIER} (LLM ${LLM})"
-    ./scripts/set-env.sh OLLAMA_MODEL "$LLM"
-    # re-sobe o portal com o tier escolhido no ambiente
+    echo "Analista IA: ${MEM_GB} GB de RAM no Docker → modelo ${IA_MODELO}"
+    ./scripts/set-env.sh OLLAMA_MODEL "$IA_MODELO"
     $DC up -d sgsi-portal >/dev/null 2>&1 || true
   fi
-  MODEL="$(grep '^OLLAMA_MODEL=' .env 2>/dev/null | cut -d= -f2- || true)"; MODEL="${MODEL:-qwen2.5:1.5b}"
+  MODEL="$(grep '^OLLAMA_MODEL=' .env 2>/dev/null | cut -d= -f2- || true)"; MODEL="${MODEL:-$IA_MODELO}"
   EMBED="$(grep '^EMBED_MODEL=' .env 2>/dev/null | cut -d= -f2- || true)";  EMBED="${EMBED:-nomic-embed-text}"
   VISM="$(grep '^VISION_MODEL=' .env 2>/dev/null | cut -d= -f2- || true)"
   for M in "$MODEL" "$EMBED" $VISM; do
@@ -281,7 +303,7 @@ fi
 echo "Usuário: $(grep '^MASTER_EMAIL=' .env|cut -d= -f2-)"
 echo "Senha:   $(grep '^MASTER_PASSWORD=' .env|cut -d= -f2-)"
 if [ "$IA" = "1" ]; then
-  echo "Analista IA: ATIVO (LLM local ${MODEL:-qwen2.5:1.5b})"
+  echo "Analista IA: ATIVO (LLM local ${MODEL:-$IA_MODELO})"
 else
   echo "Analista IA: motor semântico embarcado ativo. Para o LLM local: rode ./install.sh de novo e responda 's'."
 fi

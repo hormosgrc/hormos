@@ -87,7 +87,9 @@ services:
       DEV_AUTH_EMAIL: ${DEV_AUTH_EMAIL:-}
       LICENSE_PUBLIC_KEY: ${LICENSE_PUBLIC_KEY:-}
       OLLAMA_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
+      # O Hormos usa UM modelo para tudo; não há tier menor. O padrão aqui é o
+      # mesmo do install.sh e do ia_llm.py — trocar o modelo exige trocar os três.
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
       EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
       VISION_MODEL: ${VISION_MODEL:-}
     volumes:

@@ -58,6 +58,17 @@ configuração.
 
 ## Requisitos
 
-- 4 GB de RAM (8 GB se for usar a camada de IA)
-- 20 GB de disco
+**Sem o Analista IA:** 2 GB de RAM livres ao Docker, 4 GB de disco, 2 núcleos.
+O motor semântico embarcado (correlação por embeddings, GAP, índices e
+relatórios) funciona inteiro sem LLM.
+
+**Com o Analista IA:** **8 GB de RAM livres ao Docker** — o que exige um
+dispositivo com **12 GB** para avaliação e **16 GB** em produção com várias
+pessoas, porque os 8 GB são o que sobra depois do sistema operacional. CPU
+Core i5 de 11ª geração / Ryzen 5 com 4 núcleos ou superior; **GPU não é
+necessária**. 16 a 20 GB de disco.
+
+Não há versão reduzida da IA: o Hormos usa um único modelo da classe 7–8B para
+todos os pareceres. Abaixo de 8 GB o instalador recusa a IA e segue sem ela, em
+vez de instalar um modelo menor que devolveria parecer pior com a sua marca.
 - Linux, macOS ou Windows com WSL2

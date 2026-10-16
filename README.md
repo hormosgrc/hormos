@@ -34,14 +34,52 @@ repositórios próprios e privados.
 
 ## Requisitos
 
-| | mínimo | recomendado |
+O Hormos tem **duas** configurações, e a diferença entre elas é o Analista IA.
+Sem ele o produto é leve; com ele, o requisito é o do modelo de linguagem.
+
+### Sem o Analista IA
+
+| | mínimo |
+|---|---|
+| **Sistema** | Linux, macOS ou Windows 10/11 |
+| **Docker** | Engine 24+ e Compose v2 |
+| **RAM livre para o Docker** | **2 GB** |
+| **Disco** | **4 GB** |
+| **CPU** | 2 núcleos |
+
+O **motor semântico embarcado** continua funcionando sem LLM: correlação de
+evidência por embeddings, análise de GAP, índices e relatórios. O que não há é
+a redação dos pareceres em linguagem natural.
+
+### Com o Analista IA
+
+| | avaliação / teste | produção |
 |---|---|---|
-| **Sistema** | Linux, macOS ou Windows 10/11 | — |
-| **Docker** | Engine 24+ e Compose v2 | — |
-| **RAM livre** | **2 GB** (stack sem IA) | 8 GB+ (com o LLM completo) |
-| **Disco** | **4 GB** | 16 GB (com IA) |
-| **Portas** | 443 (e 80 só com domínio próprio) | — |
-| **Internet** | só para baixar as imagens na 1ª vez | — |
+| **RAM livre para o Docker** | **8 GB** | **8 GB** |
+| **RAM do dispositivo** | **12 GB** | **16 GB** |
+| **CPU** | Core i5 11ª geração / Ryzen 5, 4 núcleos | 6+ núcleos |
+| **GPU** | **não é necessária** | não é necessária |
+| **Disco** | 16 GB | 20 GB |
+
+**Não existe versão reduzida da IA.** O Hormos usa **um** modelo para tudo —
+parecer de risco, causa raiz, não conformidade, plano — e não há tarefa leve
+despachada para um modelo menor. Já houve uma escada (7B / 3B / 1.5B por RAM
+disponível) e ela foi removida: o modelo pequeno não entregava "menos IA",
+entregava o **mesmo parecer, pior**, com a nossa marca. Abaixo de 8 GB, o
+instalador recusa a IA e segue sem ela, em vez de degradar em silêncio.
+
+**Por que 12 GB no dispositivo se o Hormos pede 8.** Os 8 GB são o que o Docker
+precisa ter disponível. Sobram os 4 GB para o sistema operacional e o resto da
+máquina — e é por isso que um notebook de 8 GB **não** serve: nele o Docker
+nunca terá 8 livres.
+
+**Por que a GPU não entra.** O appliance roda o modelo em CPU, por desenho: ele
+é instalado na infraestrutura do cliente, que raramente tem GPU no servidor de
+aplicação. Com GPU é mais rápido, mas nada no produto depende disso.
+
+| | Portas | Internet |
+|---|---|---|
+| | 443 (e 80 só com domínio próprio); 9443 se a API for ligada | só para baixar as imagens na 1ª vez |
 
 Depois da instalação o appliance **não fala com a internet**. Nem a IA, nem o licenciamento (validado offline por assinatura Ed25519), nem a consulta ao registro público do CNJ — ele viaja dentro do produto. A contrapartida está dita em [iGovTIC-JUD](#igovtic-jud--o-índice-que-o-cnj-cobra-do-judiciário).
 
@@ -52,19 +90,16 @@ Medido nesta instalação, não estimado: o stack sem IA ocupa **~1 GB de RAM**
 Docker Engine dentro dele — assim o licenciamento do Desktop (pago acima de
 250 funcionários ou US$ 10 mi de receita) não se aplica.
 
-O **Analista IA é opcional** e escolhe o modelo pela RAM disponível ao Docker:
+O **Analista IA é opcional** e usa **um único modelo**, da classe 7–8B, que
+exige 8 GB de RAM livres ao Docker. Abaixo disso o instalador recusa a IA e
+segue sem ela — não há versão reduzida (ver [Requisitos](#requisitos)).
 
-| RAM no Docker | LLM local | acrescenta ao disco |
-|---|---|---|
-| < 6 GB | qwen2.5:1.5b | ~8 GB |
-| 6–8 GB | qwen2.5:3b | ~9 GB |
-| ≥ 8 GB | qwen2.5:7b | ~12 GB |
+Sem o LLM o produto funciona inteiro: o **motor semântico** (embeddings locais,
+~300 MB) é quem faz a correlação, e roda com folga. O LLM só refina a redação
+dos pareceres — **os fatos vêm sempre do motor**, e um refino que perca algum
+registro é descartado em favor do texto técnico completo.
 
-Sem o LLM o produto funciona inteiro: o **motor semântico** (embeddings
-locais, ~300 MB) roda em qualquer tier e é ele que faz a correlação. O LLM
-só refina a redação dos pareceres — os fatos vêm sempre do motor.
-
-**Nada sai da sua rede em nenhum tier.**
+**Nada sai da sua rede.**
 
 ## Instalação (cliente)
 
@@ -382,17 +417,18 @@ O login local continua acessível em caso de contingência via
 
 ## Analista IA embarcado (offline)
 
-O instalador detecta a RAM disponível ao Docker e escolhe o **tier** do LLM
-(tudo local, nada sai do cliente — grave `OLLAMA_MODEL` no `.env` para forçar):
+Tudo local, nada sai do cliente. O instalador confere a RAM disponível ao
+Docker e, havendo 8 GB, baixa o modelo; abaixo disso recusa a IA em vez de
+instalar um modelo menor (`OLLAMA_MODEL` no `.env` força outro, por sua conta).
 
-| RAM no Docker | LLM |
-|---|---|
-| < 6 GB | qwen2.5:1.5b |
-| 6–8 GB | qwen2.5:3b |
-| ≥ 8 GB | qwen2.5:7b |
+Medido nesta instalação, num Apple M1, com o parecer de um risco que lê o grafo
+inteiro: **3,1 tokens/s**, ~350 tokens por parecer, **cerca de 2 minutos**. Num
+processador mais modesto, na faixa de 1,5 token/s, conte ~4 minutos. A geração
+acontece em segundo plano e a tela mostra em que fase está — mas é bom saber a
+ordem de grandeza antes de achar que travou.
 
-A correlação semântica usa **embeddings locais** (`nomic-embed-text`, ~300MB, todos
-os tiers) com TF-IDF como fallback determinístico.
+A correlação semântica usa **embeddings locais** (`nomic-embed-text`, ~300 MB)
+com TF-IDF como fallback determinístico — e ela é rápida, não depende do LLM.
 
 **Não há modelo de visão.** Evidência em imagem sem texto legível (catraca, portão,
 sala-cofre) é correlacionada pela **descrição que o usuário informa** — determinístico,
@@ -414,7 +450,7 @@ Dois estágios, sem nenhuma API externa:
    Ou manualmente:
    ```bash
    docker compose --profile ia up -d
-   docker compose exec ollama ollama pull qwen2.5:1.5b   # ~1GB, roda em CPU
+   docker compose exec ollama ollama pull qwen2.5:7b   # ~4,7GB, roda em CPU
    ```
    Sem o serviço, tudo funciona com os textos determinísticos (degradação graciosa).
    Modelo configurável via `OLLAMA_MODEL` no `.env`.
