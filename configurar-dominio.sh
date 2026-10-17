@@ -148,12 +148,15 @@ sleep 5
 # Analista IA recém-ativado: baixa o modelo (idempotente)
 if [ -n "$PULL_IA" ]; then
   MODEL="$(grep '^OLLAMA_MODEL=' .env 2>/dev/null | cut -d= -f2- || true)"
-  MODEL="${MODEL:-qwen2.5:1.5b}"
+  # Mesmo padrão do install.sh e do ia_llm.py. Ficou "qwen2.5:1.5b" aqui
+  # depois que a escada de tiers foi removida — baixaria um modelo que o
+  # produto não usa mais, e anunciando o tamanho errado.
+  MODEL="${MODEL:-qwen3:8b}"
   echo "Analista IA: verificando modelo ${MODEL}..."
   if $DC exec -T ollama ollama list 2>/dev/null | grep -q "${MODEL%%:*}"; then
     echo "Analista IA: modelo ${MODEL} já disponível. ✓"
   else
-    echo "Analista IA: baixando ${MODEL} (~1GB, só na primeira vez)..."
+    echo "Analista IA: baixando ${MODEL} (~5,2 GB, só na primeira vez)..."
     $DC exec -T ollama ollama pull "$MODEL"
   fi
 fi

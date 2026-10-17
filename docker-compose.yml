@@ -91,7 +91,6 @@ services:
       # mesmo do install.sh e do ia_llm.py — trocar o modelo exige trocar os três.
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:8b}
       EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
-      VISION_MODEL: ${VISION_MODEL:-}
     volumes:
       - ./uploads:/app/uploads
       # canal de controle: o app SÓ escreve o pedido de configuração (intent)

@@ -27,12 +27,13 @@ Ollama — MIT License — https://ollama.com
 
 Modelos de linguagem (baixados pelo cliente, não redistribuídos)
 ----------------------------------------------------------------
-Qwen2.5 1.5B — Alibaba Cloud — Apache License 2.0
-    https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct
+Qwen3 8B — Alibaba Cloud — Apache License 2.0
+    https://huggingface.co/Qwen/Qwen3-8B
     Usado para redação assistida (rascunho de pareceres e de análise de causa
-    raiz). Confirme a licença vigente na página do modelo antes de cada
-    distribuição: a família Qwen2.5 usa Apache 2.0 na maioria dos tamanhos, mas
-    alguns tamanhos têm licença própria da Alibaba.
+    raiz). É o único LLM do produto: a escada 7B/3B/1.5B foi removida.
+    Confirme a licença vigente na página do modelo antes de cada distribuição —
+    a família Qwen usa Apache 2.0 na maioria dos tamanhos, mas alguns têm
+    licença própria da Alibaba.
 
 nomic-embed-text — Nomic AI — Apache License 2.0
     https://huggingface.co/nomic-ai/nomic-embed-text-v1.5

@@ -442,6 +442,51 @@ Medido num Apple M1: **cerca de 4 minutos** por parecer de risco com o grafo
 inteiro. A geração roda em segundo plano e a tela mostra em que fase está — mas
 é bom saber a ordem de grandeza antes de achar que travou.
 
+### Uma geração por vez, e a espera é informada
+
+O portal aceita 12 requisições simultâneas (3 workers × 4 threads). Se quatro
+pessoas pedirem parecer juntas, **o appliance atende uma por vez** — de
+propósito, em duas camadas.
+
+A primeira é o teto no Ollama (`OLLAMA_NUM_PARALLEL=1`). Sem ele, cada pedido
+simultâneo ganha um lugar com cache próprio, reservado **na carga do modelo**,
+não quando alguém aparece. Medido lendo o `size` de `/api/ps` logo após a carga,
+mesmo modelo, mesma máquina:
+
+| `OLLAMA_NUM_PARALLEL` | modelo residente |
+|---|---|
+| 4 | **7,86 GB** |
+| 1 | **5,94 GB** |
+
+São **1,92 GB** presos para três lugares vazios — 0,64 GB cada. Num appliance
+cujo mínimo é 8 GB livres ao Docker, é a diferença entre caber e paginar. E em
+CPU paralelizar nem acelera: os mesmos núcleos (já em ~800% com **uma** geração)
+passam a ser divididos, e todos esperam mais do que se tivessem sido atendidos
+em fila.
+
+A segunda camada existe porque o Ollama enfileira **em silêncio**: o quarto
+pedido simplesmente demoraria quatro vezes mais, sem explicação — e espera sem
+explicação é indistinguível de travamento. Então o portal mantém a sua própria
+fila e diz onde você está:
+
+```
+Você é o 2º na fila · início em ~8 min
+```
+
+A estimativa sai da **média das últimas 10 gerações reais** daquela instalação,
+não de uma constante — uma constante erraria em toda máquina diferente daquela
+onde foi medida. A fila aceita 5 esperando; acima disso o pedido é recusado na
+hora, porque prometer 40 minutos é pior que recusar.
+
+Duas coisas importam para quem opera:
+
+- **o parecer técnico não espera na fila.** Ele é determinístico, custa ~0,2 s e
+  aparece na tela imediatamente, já gravado. Quem entra na fila é só o refino da
+  redação pelo LLM. Quem não quiser esperar já tem o conteúdo completo;
+- a fila vive **no banco**, não na memória do processo — com 3 workers, estado em
+  processo não seria compartilhado. O trinco é de sessão do PostgreSQL, então um
+  worker que morra solta o lugar sozinho em vez de entupir a fila.
+
 A correlação semântica usa **embeddings locais** (`nomic-embed-text`, ~300 MB)
 com TF-IDF como fallback determinístico — e ela é rápida, não depende do LLM.
 

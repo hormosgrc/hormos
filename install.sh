@@ -256,8 +256,12 @@ if [ "$IA" = "1" ]; then
   fi
   MODEL="$(grep '^OLLAMA_MODEL=' .env 2>/dev/null | cut -d= -f2- || true)"; MODEL="${MODEL:-$IA_MODELO}"
   EMBED="$(grep '^EMBED_MODEL=' .env 2>/dev/null | cut -d= -f2- || true)";  EMBED="${EMBED:-nomic-embed-text}"
-  VISM="$(grep '^VISION_MODEL=' .env 2>/dev/null | cut -d= -f2- || true)"
-  for M in "$MODEL" "$EMBED" $VISM; do
+  # Não há VISION_MODEL: o modelo de visão foi testado e REMOVIDO do produto
+  # (somava 3–5 GB e entregava descrição genérica). A variável continuava sendo
+  # lida aqui e repassada pelo compose, mas nenhum código do portal a consome —
+  # baixaria gigabytes para nada, e com MAX_LOADED_MODELS=1 brigaria com o LLM.
+  # Evidência em imagem é correlacionada pela descrição que o usuário informa.
+  for M in "$MODEL" "$EMBED"; do
     [ -n "$M" ] || continue
     echo "Analista IA: verificando modelo ${M}..."
     if $DC exec -T ollama ollama list 2>/dev/null | grep -q "${M%%:*}"; then
