@@ -135,7 +135,7 @@ Você não precisa instalar o cosign: o Docker que já é pré-requisito basta.
 
 ```bash
 docker run --rm ghcr.io/sigstore/cosign/cosign:latest verify \
-  ghcr.io/hormosgrc/hormos-portal:2.2.3 \
+  ghcr.io/hormosgrc/hormos-portal:2.2.4 \
   --certificate-identity 'sgduarte7@gmail.com' \
   --certificate-oidc-issuer 'https://accounts.google.com'
 ```
@@ -163,7 +163,7 @@ fornecer como serviço gerenciado e contornar a chave de licença são vedados.
 
 ---
 
-# Hormos v2.2.3
+# Hormos v2.2.4
 
 **Plataforma de Governança, Riscos e Conformidade** — Multi-framework, self-hosted, sem licenciamento por usuário.
 

@@ -14,7 +14,7 @@ de build e um id de build. Pegando um contêiner rodando em qualquer cliente,
 volta-se ao commit que o gerou:
 
 ```bash
-docker image inspect ghcr.io/hormosgrc/hormos-portal:2.2.3 \
+docker image inspect ghcr.io/hormosgrc/hormos-portal:2.2.4 \
   --format '{{index .Config.Labels "org.opencontainers.image.revision"}}'
 ```
 
@@ -38,7 +38,7 @@ pré-requisito do appliance. O cosign roda como contêiner:
 
 ```bash
 docker run --rm ghcr.io/sigstore/cosign/cosign:latest verify \
-  ghcr.io/hormosgrc/hormos-portal:2.2.3 \
+  ghcr.io/hormosgrc/hormos-portal:2.2.4 \
   --certificate-identity 'sgduarte7@gmail.com' \
   --certificate-oidc-issuer 'https://accounts.google.com'
 ```
@@ -53,7 +53,7 @@ decoração — exatamente o que ela deveria impedir.
 Saída esperada:
 
 ```
-Verification for ghcr.io/hormosgrc/hormos-portal:2.2.3 --
+Verification for ghcr.io/hormosgrc/hormos-portal:2.2.4 --
 The following checks were performed on each of these signatures:
   - The cosign claims were validated
   - Existence of the claims in the transparency log was verified offline
@@ -87,7 +87,7 @@ Toda instalação exibe, no rodapé de cada tela e no cabeçalho de **cada
 relatório impresso ou salvo em PDF**:
 
 ```
-Hormos v2.2.3 · Licenciado para <cliente> · LIC-000123 · instância C3D3E2957821
+Hormos v2.2.4 · Licenciado para <cliente> · LIC-000123 · instância C3D3E2957821
 ```
 
 A impressão da instância é derivada da **licença assinada** (cliente + código
