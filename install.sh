@@ -304,8 +304,17 @@ else
   echo "  Domínio próprio do cliente (certificado público): área admin →"
   echo "  Domínio & Certificado, ou ./configurar-dominio.sh grc.cliente.com.br"
 fi
+# A senha aparece aqui porque é GERADA nesta instalação e ninguém mais a
+# conhece — não mostrá-la deixaria o appliance inacessível. O que a protege não
+# é escondê-la: é ela ser de USO ÚNICO (o realm a marca como "temporary"), e
+# por isso o aviso abaixo não é enfeite. Sem ele, a tela de troca de senha no
+# primeiro acesso parece erro, e a pessoa liga para o suporte.
 echo "Usuário: $(grep '^MASTER_EMAIL=' .env|cut -d= -f2-)"
-echo "Senha:   $(grep '^MASTER_PASSWORD=' .env|cut -d= -f2-)"
+echo "Senha:   $(grep '^MASTER_PASSWORD=' .env|cut -d= -f2-)   (de uso único)"
+echo
+echo "  ↑ Esta senha vale para UM acesso: o sistema vai pedir que você defina"
+echo "    a sua no primeiro login. Até lá, ela está visível neste terminal —"
+echo "    feche-o depois, e não cole esta saída em e-mail nem em chamado."
 if [ "$IA" = "1" ]; then
   echo "Analista IA: ATIVO (LLM local ${MODEL:-$IA_MODELO})"
 else

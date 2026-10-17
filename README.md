@@ -113,6 +113,21 @@ install.bat           # Windows (instala WSL2 + Docker Engine)
 O compose puxa a **imagem publicada e assinada** — não constrói a partir do
 código-fonte.
 
+### A senha do primeiro acesso é de uso único
+
+No fim da instalação o script mostra o usuário e a senha do administrador. A
+senha é **gerada naquela instalação** (96 bits), então cada cliente recebe a
+sua — e ela precisa ser mostrada, porque ninguém mais a conhece.
+
+O que a protege não é escondê-la: é o Keycloak **exigir a troca no primeiro
+acesso**. Isso importa porque a linha impressa sobrevive no scrollback do
+terminal, em qualquer `./install.sh | tee install.log` e em transcrição de
+instalação colada num chamado de suporte — todos caminhos reais. Sendo de uso
+único, nada disso serve depois da primeira entrada.
+
+Feche o terminal quando terminar, e não cole a saída da instalação em e-mail ou
+chamado sem apagar essa linha.
+
 ### Conferindo a assinatura antes de rodar
 
 Dizer que a imagem é assinada e não mostrar como conferir é pedir confiança.

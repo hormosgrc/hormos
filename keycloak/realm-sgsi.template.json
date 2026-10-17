@@ -28,7 +28,7 @@
     "credentials": [{
       "type": "password",
       "value": "${MASTER_PASSWORD}",
-      "temporary": false
+      "temporary": true
     }]
   }]
 }
