@@ -193,6 +193,12 @@ command -v openssl >/dev/null 2>&1 || {
 
 # ── Configuração ─────────────────────────────────────────────────────
 [ -f .env ] || cp .env.example .env
+# O .env guarda a senha do banco, a do console do Keycloak, a chave de sessão
+# do Flask e o segredo do gateway — tudo em texto claro. Nascia 644 (legível
+# por QUALQUER usuário da máquina), porque nada o restringia: o `cp` herda a
+# máscara do sistema. Num servidor com mais de uma conta, isso é leitura livre
+# dos segredos do appliance. Achado pela suíte F da bateria.
+chmod 600 .env 2>/dev/null || true
 chmod +x scripts/*.sh *.sh 2>/dev/null || true
 if grep -q CHANGE_ME .env; then ./generate-secrets.sh; fi
 ./scripts/render-keycloak-realm.sh

@@ -13,3 +13,7 @@ for key in POSTGRES_PASSWORD KEYCLOAK_ADMIN_PASSWORD KEYCLOAK_CLIENT_SECRET FLAS
 # senha vive por um login só, então não há razão para economizar entropia.
 if grep -q '^MASTER_PASSWORD=CHANGE_ME' .env; then ./scripts/set-env.sh MASTER_PASSWORD "Sgsi@$(openssl rand -hex 12)!"; fi
 if grep -q '^OAUTH2_PROXY_COOKIE_SECRET=CHANGE_ME' .env; then ./scripts/set-env.sh OAUTH2_PROXY_COOKIE_SECRET "$(openssl rand -base64 32 | tr -- '+/' '-_' | tr -d '=')"; fi
+
+# Quem acabou de ESCREVER segredos no arquivo é quem tem de trancá-lo.
+# Aqui e no install.sh: este script também roda sozinho, fora dele.
+chmod 600 .env 2>/dev/null || true
