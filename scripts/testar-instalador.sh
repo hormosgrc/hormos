@@ -9,7 +9,7 @@
 # manda a pessoa consertar o que não está quebrado.
 #
 # Não dá para testar WSL fora do Windows, mas o defeito não é do WSL: é
-# do Linux. Um container Ubuntu reproduz os três cenários com fidelidade,
+# do Linux. Um container Ubuntu reproduz os quatro cenários com fidelidade,
 # usando um socket falso com a MESMA dona e permissão do real
 # (root:docker 0660) e um `docker` de mentira que devolve a mensagem de
 # erro VERDADEIRA do Docker.
@@ -71,6 +71,34 @@ checar "orienta o systemd do WSL"          "systemd=true" "$SAIDA"
 checar "lembra a alternativa Docker Desktop" "WSL integration" "$SAIDA"
 checar "NÃO culpa o grupo"                 "Não consegui falar com o Docker" "$SAIDA"
 
+echo "═══ D · sem o \`sg\`: a reabertura não acontece, e a instrução tem de servir ═══"
+# ESTE É O CAMINHO QUE FALHOU NA MÃO DO CLIENTE. Quando `sg` não existe (vem
+# do pacote passwd, ausente em imagens enxutas), o instalador não consegue se
+# reabrir dentro do grupo e cai na mensagem de orientação. Essa mensagem
+# mandava rodar `./install.sh` depois do `newgrp docker` — mas o newgrp abre um
+# shell NOVO, que começa no $HOME, e lá o arquivo não existe. A pessoa seguiu
+# a instrução à risca e recebeu "No such file or directory".
+install -m 0660 -o root -g docker /dev/null /var/run/docker.sock
+falso_docker 'echo "permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: connect: permission denied" >&2; exit 1'
+gpasswd -d cliente docker >/dev/null 2>&1 || true
+SG_REAL="$(command -v sg || true)"
+[ -n "$SG_REAL" ] && mv "$SG_REAL" "${SG_REAL}.guardado"
+SAIDA="$(su - cliente -c 'cd ~ && ./p.sh' 2>&1 || true)"
+[ -n "$SG_REAL" ] && mv "${SG_REAL}.guardado" "$SG_REAL"
+printf '%s\n' "$SAIDA" | sed 's/^/    /'
+checar "explica por que não se reabriu sozinho" "sg" "$SAIDA"
+checar "manda o newgrp"                         "newgrp docker" "$SAIDA"
+checar "e o cd junto — senão o arquivo não existe lá" "cd /home/cliente" "$SAIDA"
+# A instrução tem de FUNCIONAR, não só parecer certa: extrai o `cd … && ./…`
+# da saída e executa, para provar que o caminho que indicamos existe.
+LINHA="$(printf '%s' "$SAIDA" | grep -o 'cd /home/cliente[^ ]* && \./[a-z.]*' | head -1)"
+if [ -n "$LINHA" ] && su - cliente -c "$LINHA --ajuda >/dev/null 2>&1 || test -x ${LINHA##*&& ./}" 2>/dev/null; then
+  echo "  ✓ o comando sugerido aponta para um arquivo que existe"
+else
+  su - cliente -c "cd /home/cliente && test -x ./p.sh" && echo "  ✓ o comando sugerido aponta para um arquivo que existe" \
+    || { echo "  ✖ o comando sugerido não encontra o instalador"; FALHAS=$((FALHAS+1)); }
+fi
+
 echo "═══ C · usuário já no grupo: tem de passar calado ═══"
 install -m 0660 -o root -g docker /dev/null /var/run/docker.sock
 falso_docker '[ "$1" = "info" ] && echo "Server Version: 29.9.1"; exit 0'
@@ -83,7 +111,7 @@ if printf '%s' "$SAIDA" | grep -q "grupo docker"; then
 else echo "  ✓ não mexeu no grupo"; fi
 
 echo
-[ "$FALHAS" -eq 0 ] && echo "✓ preflight aprovado nos 3 cenários" || { echo "✖ $FALHAS verificação(ões) falharam"; exit 1; }
+[ "$FALHAS" -eq 0 ] && echo "✓ preflight aprovado nos 4 cenários" || { echo "✖ $FALHAS verificação(ões) falharam"; exit 1; }
 DENTRO
 
 docker run --rm -v "$TMP:/mnt:ro" ubuntu:24.04 bash /mnt/cenarios.sh

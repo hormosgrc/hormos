@@ -94,7 +94,16 @@ case "$(docker_erro)" in
     echo "  O daemon está de pé, mas este usuário não alcança o socket."
     if ! id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx docker; then
       echo "  Adicionando $USER ao grupo docker…"
-      $SUDO usermod -aG docker "$USER" 2>/dev/null || true
+      # O erro NÃO é mais engolido. Com `2>/dev/null || true`, um usermod que
+      # falhasse — sem sudo, usuário vindo de LDAP/AD, /etc/group somente
+      # leitura — deixava o instalador seguir anunciando "já te coloquei no
+      # grupo docker" e mandar rodar `newgrp docker`, que falharia pelo mesmo
+      # motivo, sem nunca dizer qual era. Checagem que falha para o lado do
+      # "pode seguir" é pior que não ter checagem.
+      if ! $SUDO usermod -aG docker "$USER"; then
+        echo "  ! Falhei ao adicionar $USER ao grupo docker (erro acima)."
+        echo "    Sem isso, nem este instalador nem o 'newgrp docker' vão passar."
+      fi
     fi
     # Credencial de grupo é fixada no LOGIN: entrar no grupo não muda a sessão
     # em curso. Sem reabrir, o instalador morreria aqui mesmo depois de ter
@@ -111,6 +120,17 @@ case "$(docker_erro)" in
       for _a in "$@"; do CMD="$CMD $(_citar "$_a")"; done
       echo "  Reabrindo o instalador já dentro do grupo docker…"
       exec sg docker -c "HORMOS_GRUPO=1 $CMD"
+    elif [ -z "${HORMOS_GRUPO:-}" ]; then
+      # Quando a reabertura automática NÃO acontece, dizer por quê. Sem isto o
+      # instalador apenas seguia até a mensagem final, que fala em "já te
+      # coloquei no grupo" — e a pessoa fica sem saber se o problema foi o
+      # grupo, o `sg` ou outra coisa. Aconteceu num WSL em 23/10/2026.
+      if ! command -v sg >/dev/null 2>&1; then
+        echo "  (não reabri sozinho: o comando 'sg' não existe nesta máquina."
+        echo "   Ele vem do pacote 'passwd' — instale com: $SUDO apt install passwd)"
+      elif ! id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx docker; then
+        echo "  (não reabri sozinho: '$USER' ainda não aparece no grupo docker)"
+      fi
     fi
     ;;
 esac
@@ -127,9 +147,18 @@ docker_pronto || {
   case "$ERRO" in
     *"permission denied"*|*"permissão negada"*)
       echo "  É PERMISSÃO, não daemon — o daemon está no ar."
-      echo "  Já te coloquei no grupo docker. Agora é só valer na sessão:"
-      echo "    saia e entre de novo no terminal, ou rode:  newgrp docker"
-      echo "  e repita:  ./install.sh"
+      echo "  Já te coloquei no grupo docker. Falta a credencial valer nesta"
+      echo "  sessão, e ela é fixada no login. Rode:"
+      echo
+      # O CAMINHO COMPLETO, e não `./install.sh`. `newgrp` abre um shell NOVO,
+      # que começa no $HOME — então o `./install.sh` da instrução anterior não
+      # existia ali e a pessoa recebia "No such file or directory" logo depois
+      # de seguir a orientação à risca. Aconteceu numa instalação real no WSL.
+      echo "    newgrp docker"
+      echo "    cd $PWD && ./$(basename "$0")"
+      echo
+      echo "  (o 'cd' é necessário: o newgrp abre um shell novo, que começa"
+      echo "   na sua pasta pessoal, não aqui)"
       ;;
     *)
       if [ -n "$EH_WSL" ]; then
@@ -137,7 +166,8 @@ docker_pronto || {
         echo "  e ele NÃO vem ligado por padrão. Habilite uma vez:"
         echo "    sudo sh -c 'printf \"[boot]\\nsystemd=true\\n\" >> /etc/wsl.conf'"
         echo "  depois, no PowerShell do Windows:  wsl --shutdown"
-        echo "  reabra o Ubuntu e rode ./install.sh de novo."
+        echo "  reabra o Ubuntu e rode de novo:"
+        echo "    cd $PWD && ./$(basename "$0")"
         echo "  (Sem systemd, dá para subir à mão:  sudo service docker start)"
         echo
         echo "  Alternativa: Docker Desktop no Windows com integração WSL ligada"
@@ -213,6 +243,47 @@ fi
 # Profile da IA (opcional)
 if [ "$IA" = "1" ]; then export COMPOSE_PROFILES=ia; fi
 
+# ── RAM do Analista IA: ANTES do pull ───────────────────────────────────────
+# Esta checagem vivia depois da subida, junto do download do modelo. O efeito
+# era cruel em conexão lenta: o `$DC pull` já tinha baixado a imagem do Ollama
+# (3,4 GB, quase toda de bibliotecas de GPU) quando o instalador descobria que
+# a máquina não tem os 8 GB e abortava. A pessoa pagava o download inteiro para
+# receber um "✖". Medir memória não depende de nada estar no ar — então mede-se
+# primeiro, e só se couber é que se gasta a banda.
+if [ "$IA" = "1" ]; then
+  MEM_BYTES="$(docker info --format '{{.MemTotal}}' 2>/dev/null || echo 0)"
+  MEM_GB=$(( MEM_BYTES / 1073741824 ))
+  if [ "$MEM_GB" -lt "$IA_RAM_MINIMA" ]; then
+    echo "✖ O Analista IA precisa de ${IA_RAM_MINIMA} GB de RAM disponíveis ao Docker."
+    echo "  Este Docker tem ${MEM_GB} GB."
+    echo
+    echo "  Não há modelo menor: o Hormos usa UM modelo para tudo, e um modelo"
+    echo "  pequeno devolveria parecer de qualidade inferior com a sua marca."
+    echo
+    if [ -n "$EH_WSL" ]; then
+      # No WSL quem impõe o teto é a VM da distribuição, não o Docker: o
+      # "Settings → Resources" que a mensagem genérica mandava procurar é do
+      # Docker Desktop e NÃO EXISTE quando o Engine roda dentro do Ubuntu.
+      # Mandar procurar uma tela inexistente é pior que não orientar.
+      echo "  No WSL quem limita a memória é a VM do WSL, não o Docker — não há"
+      echo "  'Settings → Resources' aqui. No Windows, crie ou edite o arquivo"
+      echo "      C:\\Users\\<seu-usuario>\\.wslconfig"
+      echo "  com o conteúdo:"
+      echo
+      echo "      [wsl2]"
+      echo "      memory=12GB"
+      echo
+      echo "  depois, no PowerShell:  wsl --shutdown"
+      echo "  reabra o Ubuntu e rode ./install.sh de novo,"
+    else
+      echo "  Aumente a memória do Docker (Settings → Resources) e rode de novo,"
+    fi
+    echo "  ou instale sem o Analista IA — o motor semântico embarcado continua"
+    echo "  funcionando e não depende de LLM."
+    exit 1
+  fi
+fi
+
 # ── Subida ───────────────────────────────────────────────────────────
 if [ "$RESET" = "--reset" ]; then $DC down -v || true; fi
 $DC pull
@@ -238,19 +309,8 @@ sleep 15
 # isso num 1.5b não é "funcionar com pouca memória": é entregar texto ruim com
 # a nossa marca. Melhor dizer que exige 8 GB e não rodar onde não cabe.
 if [ "$IA" = "1" ]; then
-  MEM_BYTES="$(docker info --format '{{.MemTotal}}' 2>/dev/null || echo 0)"
-  MEM_GB=$(( MEM_BYTES / 1073741824 ))
-  if [ "$MEM_GB" -lt "$IA_RAM_MINIMA" ]; then
-    echo "✖ O Analista IA precisa de ${IA_RAM_MINIMA} GB de RAM disponíveis ao Docker."
-    echo "  Este Docker tem ${MEM_GB} GB."
-    echo
-    echo "  Não há modelo menor: o Hormos usa UM modelo para tudo, e um modelo"
-    echo "  pequeno devolveria parecer de qualidade inferior com a sua marca."
-    echo "  Aumente a memória do Docker (Settings → Resources) e rode de novo,"
-    echo "  ou instale sem o Analista IA — o motor semântico embarcado continua"
-    echo "  funcionando e não depende de LLM."
-    exit 1
-  fi
+  # A checagem de RAM já rodou antes do `$DC pull` — ver o bloco "RAM do
+  # Analista IA: ANTES do pull". Aqui só se baixa modelo.
   # Modelo de VISÃO desativado por padrão: em appliance vendido, o vl:3b/7b soma
   # ~3–5GB de RAM ao lado do LLM e entrega descrição genérica de pouco valor.
   # Fotos sem texto (catraca, sala-cofre) são correlacionadas pela DESCRIÇÃO que
