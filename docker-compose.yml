@@ -65,7 +65,7 @@ services:
     # Imagem publicada e assinada — é o que o cliente recebe. Para desenvolver
     # a partir do código, suba com o override:
     #   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
-    image: ${PORTAL_IMAGE:-ghcr.io/hormosgrc/hormos-portal:2.2.5}
+    image: ${PORTAL_IMAGE:-ghcr.io/hormosgrc/hormos-portal:2.2.6}
     container_name: sgsi_portal
     restart: unless-stopped
     environment:
