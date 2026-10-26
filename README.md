@@ -364,6 +364,70 @@ não avisa sozinho.
 e contrato de auditoria costuma mandar mais. Remover uma base é ato de
 servidor, deliberado.
 
+**Mudança de esquema alcança quem já existe.** Toda migração do portal é
+aplicada, no boot, a **todas** as bases de cliente registradas — não só à
+principal. Cada uma em isolamento: uma base fora do ar não impede a migração
+das outras nem a subida do sistema.
+
+### O exercício, o cronograma e o parecer
+
+O painel acima responde *como o cliente está*. Quem presta o serviço também
+precisa saber **como o próprio trabalho está** — e, no fim, emitir o
+documento. O módulo do auditor externo cobre o ciclo inteiro.
+
+**O trabalho é um exercício.** Cada auditoria contratada pertence a um ano e
+aponta para o ciclo anterior. É esse vínculo que permite dizer, no ano
+seguinte, se um achado é novo, se **atravessou** o ciclo ainda em tratamento,
+ou se é **reincidente** — foi encerrado e voltou a aparecer num exame novo.
+A distinção não é de vocabulário: reincidência agrava a classificação numa
+auditoria de certificação. "Abrir exercício seguinte" cria o trabalho do ano
+que vem, herda escopo e norma, e carrega os apontamentos ainda abertos.
+
+**O cronograma tem duas naturezas de linha:** as etapas do auditor (previsto ×
+realizado) e os marcos cobrados do cliente. Numa reunião de acompanhamento,
+"o trabalho está atrasado" não move ninguém; "está atrasado com você, há 23
+dias" move.
+
+**O parecer congela ao ser emitido.** Enquanto o trabalho corre, o relatório é
+prévia e acompanha os dados. Ao emitir, o conteúdo é fotografado: o parecer do
+exercício de 2026 continuará dizendo, em 2028, exatamente o que dizia no dia
+da assinatura. Reemitir cria uma versão nova e **preserva a anterior**, com o
+motivo registrado — quem recebeu uma versão precisa poder reencontrá-la como a
+recebeu.
+
+O documento traz nota de método e data-base, declaração de independência,
+escopo e limitações, parecer, resultado por cláusula ou domínio, achados com
+amostra e tratamento, situação do ciclo anterior, evidências examinadas e
+conclusão.
+
+**O sistema calcula um parecer, e mostra a conta — mas quem opina é o
+auditor.** São quatro valores: *Conforme*, *Conforme com ressalvas*, *Não
+conforme* e **Escopo insuficiente para opinar**. O quarto existe porque a
+ordem das perguntas importa: para dizer **não conforme** basta uma não
+conformidade maior em aberto — quem encontrou, encontrou, e não é preciso ter
+examinado tudo para afirmar que algo está quebrado. Para dizer **conforme** é
+preciso ter examinado o bastante, porque essa frase afirma que o *resto* está
+em ordem. Abaixo do piso de exame o sistema se recusa a atestar conformidade,
+em vez de assinar sobre uma base vazia.
+
+A verificação de **imparcialidade** (9.2.2 c) é medida, não declarada: o
+sistema conta quantos itens do escopo têm como responsável a mesma pessoa que
+lidera a auditoria. Um parágrafo de independência não é verificável; um número
+é.
+
+Há ainda o **relatório de status**, para o acompanhamento no meio do caminho —
+o que andou no período, o que está atrasado e de quem é a pendência. Ele
+declara, na abertura, que **não é parecer**: um acompanhamento bem formatado
+circula, e circulando vira "o relatório da auditoria" na cabeça de quem
+recebe.
+
+> O módulo do auditor externo — cronograma, parecer e virada de ciclo —
+> está disponível a partir da **Edição Essencial**. A Edição Comunidade
+> registra o SGSI da própria organização; emitir parecer sobre o sistema de
+> gestão de um terceiro é o serviço prestado. O que continua livre na
+> Comunidade: a auditoria, os achados, o roteiro gerado do SOA e o Relatório
+> de Auditoria — Plano de Ação.
+
 ## API v1 — desligada por padrão, e em porta própria
 
 Serve para **tirar a planilha do meio**: importar o inventário que já existe,
