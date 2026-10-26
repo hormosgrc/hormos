@@ -67,7 +67,25 @@ if [ "${PUBLICAR:-nao}" = "sim" ]; then
     --format '{{.Manifest.Digest}}')"
   echo "▸ Publicada: ${DIGEST}"
 
-  if command -v cosign >/dev/null 2>&1; then
+  # ASSINAR=nao separa publicação de assinatura, e isso NÃO é conveniência.
+  #
+  # O `cosign sign` sem terminal cai no DEVICE FLOW: imprime um código válido
+  # por 300 s e espera alguém digitá-lo em oauth2.sigstore.dev. Se a saída do
+  # script estiver num `tail`, num log ou em segundo plano, ninguém vê o
+  # código, o cosign espera para sempre — e o script ainda termina com código
+  # 0. A imagem fica publicada e SEM ASSINATURA, sem nada acusar. Aconteceu na
+  # 2.2.6 e custou uma hora.
+  #
+  # Como o build leva ~15 min (amd64 emulado num host arm64, Cython duas
+  # vezes), ele quase sempre roda em segundo plano — ou seja, o caso perigoso
+  # é o caso normal. Com ASSINAR=nao o script publica e PARA, dizendo o
+  # comando exato para assinar em primeiro plano, com alguém presente.
+  if [ "${ASSINAR:-sim}" != "sim" ]; then
+    echo "▸ ASSINAR=nao — imagem publicada e AINDA NÃO ASSINADA."
+    echo "  Assine agora, em PRIMEIRO PLANO (o cosign vai pedir autenticação):"
+    echo "    cosign sign --yes ${DIGEST}"
+    echo "  Depois verifique com o mesmo comando que o cliente roda."
+  elif command -v cosign >/dev/null 2>&1; then
     cosign sign --yes "${DIGEST}"
     echo "▸ Assinada com cosign."
     echo "  O cliente verifica SEM instalar nada — ele já tem Docker:"
