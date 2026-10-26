@@ -386,3 +386,26 @@ if [ "$IA" = "1" ]; then
 else
   echo "Analista IA: motor semântico embarcado ativo. Para o LLM local: rode ./install.sh de novo e responda 's'."
 fi
+
+# ── Como operar depois ────────────────────────────────────────────────────
+# Quem homologa num desktop ou notebook pode nunca ter usado Docker, e a
+# primeira pergunta que faz ao suporte é "como eu paro isso?". A resposta tem
+# de estar AQUI, na tela em que a pessoa já está olhando, e não só no README.
+#
+# O `-p` dispensa o `cd`: o Compose descobre o projeto pelos rótulos dos
+# contêineres. É de propósito — instrução que depende de estar na pasta certa
+# foi exatamente o defeito que o instalador já teve com o `newgrp`.
+echo
+echo "─────────────────────────────────────────────────────────────────"
+echo " COMO PARAR E LIGAR O HORMOS   (funciona de qualquer pasta)"
+echo
+echo "   docker compose -p sgsi-appliance-core ps      # está no ar?"
+echo "   docker compose -p sgsi-appliance-core stop    # parar tudo"
+echo "   docker compose -p sgsi-appliance-core start   # ligar de volta"
+echo
+echo " Parar NÃO apaga nada — os dados ficam em volumes do Docker, e o"
+echo " sistema volta como estava. Uma vez parado, fica parado até você"
+echo " mandar ligar, mesmo depois de reiniciar a máquina."
+echo
+echo " Guia completo: https://hormosgrc.github.io/instalacao.html"
+echo "─────────────────────────────────────────────────────────────────"

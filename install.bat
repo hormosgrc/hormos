@@ -151,6 +151,31 @@ echo    Feche o navegador POR COMPLETO antes de abrir,
 echo    para que ele releia os certificados.
 echo  ═══════════════════════════════════════════════
 echo.
+
+REM ── Como operar depois ────────────────────────────────────────────
+REM  Quem instala por aqui pode nunca ter usado Docker — e no Windows
+REM  ainda há um degrau a mais: os comandos rodam DENTRO do WSL, não
+REM  no PowerShell. Dizer isso aqui evita o chamado "colei o comando e
+REM  deu erro", que seria o comando certo no lugar errado.
+echo  ───────────────────────────────────────────────────────────────
+echo   COMO PARAR E LIGAR O HORMOS
+echo.
+echo   Abra o aplicativo "Ubuntu" no menu Iniciar e rode:
+echo.
+echo     docker compose -p sgsi-appliance-core ps      ^| esta no ar?
+echo     docker compose -p sgsi-appliance-core stop    ^| parar tudo
+echo     docker compose -p sgsi-appliance-core start   ^| ligar
+echo.
+echo   Parar NAO apaga nada: os dados ficam guardados e o sistema
+echo   volta como estava.
+echo.
+echo   DEPOIS DE REINICIAR O WINDOWS: o WSL nao roda sozinho em
+echo   segundo plano. Se o https://localhost nao responder, abra o
+echo   aplicativo "Ubuntu" uma vez e aguarde alguns segundos.
+echo.
+echo   Guia completo: https://hormosgrc.github.io/instalacao.html
+echo  ───────────────────────────────────────────────────────────────
+echo.
 start "" "https://localhost"
 pause
 endlocal

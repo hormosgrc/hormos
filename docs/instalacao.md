@@ -13,12 +13,41 @@ cd hormos
 
 ## Windows
 
-Baixe o repositório, clique com o botão direito em `install.bat` e escolha
-**Executar como administrador**.
+> **Recomendamos instalar pelo WSL**, o subsistema Linux que já vem no próprio
+> Windows, e **não** pelo Docker Desktop. Os dois funcionam e o Desktop é
+> suportado — mas ele exige assinatura comercial para empresas acima de certo
+> porte, e o WSL é o caminho que o instalador exercita em ambiente automatizado
+> a cada versão.
 
-O instalador prepara o WSL2 e o Docker Engine dentro dele. Não é necessário
-Docker Desktop — e por isso não há a exigência de licença comercial que ele
-impõe a empresas maiores.
+**Caminho automático.** Baixe o repositório, clique com o botão direito em
+`install.bat` e escolha **Executar como administrador**. Ele prepara o WSL2 e o
+Docker Engine dentro dele, instala o Hormos em `/opt/hormos` e confia na CA no
+repositório do Windows. Se o WSL ainda não existia, ele pede para reiniciar o
+Windows e rodar o mesmo arquivo de novo — o progresso não se perde.
+
+**Caminho manual**, comando a comando. No PowerShell como administrador:
+
+```powershell
+wsl --install -d Ubuntu
+```
+
+Reinicie, abra o Ubuntu, crie o usuário do Linux e então, dentro dele:
+
+```bash
+sudo sh -c 'printf "[boot]\nsystemd=true\n" >> /etc/wsl.conf'
+# feche o Ubuntu, rode `wsl --shutdown` no PowerShell e reabra
+
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+# FECHE E ABRA O TERMINAL — permissão de grupo só vale em sessão nova
+
+docker ps
+git clone https://github.com/hormosgrc/hormos.git
+cd hormos && ./install.sh
+```
+
+O WSL encaminha `localhost` sozinho: o navegador do Windows abre
+`https://localhost` sem endereço de máquina virtual.
 
 ### Já estou dentro do WSL, ou já tenho Docker Desktop
 
@@ -30,12 +59,12 @@ Duas particularidades do WSL que o instalador trata, mas convém conhecer:
 
 - **Grupo `docker`:** entrar no grupo não vale para a sessão em curso, porque
   credencial de grupo é fixada no login. O instalador detecta a falta de
-  permissão, te adiciona ao grupo e se reabre já dentro dele. Se precisar à
-  mão: `newgrp docker`.
+  permissão, te adiciona ao grupo e se reabre já dentro dele. Quando não
+  consegue, ele diz o motivo e imprime o comando com o caminho completo —
+  `newgrp` abre um shell novo, que começa no `$HOME`, onde o `install.sh` não
+  está.
 - **systemd:** não vem ligado por padrão no WSL, e sem ele o serviço do Docker
-  não sobe sozinho. Habilite uma vez com
-  `sudo sh -c 'printf "[boot]\nsystemd=true\n" >> /etc/wsl.conf'`, rode
-  `wsl --shutdown` no PowerShell e reabra o Ubuntu.
+  não sobe sozinho. Sem ele, suba à mão com `sudo service docker start`.
 
 A autoridade certificadora interna é instalada no repositório do **Windows**,
 porque é lá que o navegador roda. Instalá-la apenas no Linux não removeria o
@@ -48,6 +77,44 @@ certificadora local, então o navegador não reclama do certificado.
 
 Sem chave de licença, o sistema sobe na **Edição Comunidade** — ISO 27001 e
 LGPD completos, sem prazo.
+
+## Operação no dia a dia
+
+Você não precisa saber Docker. São três comandos, e funcionam **de qualquer
+pasta**:
+
+```bash
+docker compose -p sgsi-appliance-core ps       # está no ar?
+docker compose -p sgsi-appliance-core stop     # parar (nada é apagado)
+docker compose -p sgsi-appliance-core start    # ligar de volta
+```
+
+Parar não apaga nada — os dados vivem em volumes, separados dos contêineres — e
+o que foi parado **fica parado, mesmo depois de reiniciar a máquina**, até
+alguém mandar ligar.
+
+| Contêiner | O que é |
+|---|---|
+| `sgsi_portal` | o Hormos em si |
+| `sgsi_postgres` | o banco: é onde os dados vivem |
+| `sgsi_keycloak` | login, SSO e MFA |
+| `sgsi_caddy` | a entrada HTTPS |
+| `sgsi_oauth2_portal` | o porteiro entre a entrada e o portal |
+| `sgsi_configurator` | aplica domínio e certificado próprios |
+| `sgsi_ollama` | o Analista IA, se instalado |
+
+Para acompanhar o que o sistema faz (saia com `Ctrl+C`):
+
+```bash
+docker compose -p sgsi-appliance-core logs -f --tail=100 sgsi-portal
+```
+
+**No Windows, depois de reiniciar:** o WSL não roda em segundo plano sozinho.
+Se o `https://localhost` não responder, abra o aplicativo Ubuntu uma vez — o
+Docker sobe junto e os contêineres voltam.
+
+O guia completo, com capturas e solução de problemas, está em
+<https://hormosgrc.github.io/instalacao.html>.
 
 ## Trocar para o seu domínio
 

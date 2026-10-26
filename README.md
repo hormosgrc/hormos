@@ -113,6 +113,11 @@ install.bat           # Windows (instala WSL2 + Docker Engine)
 O compose puxa a **imagem publicada e assinada** — não constrói a partir do
 código-fonte.
 
+No Windows, o caminho recomendado é o **WSL**, não o Docker Desktop — veja
+[Windows — pelo WSL, e o porquê](#windows--pelo-wsl-e-o-porquê). Depois de
+instalado, [Operação no dia a dia](#operação-no-dia-a-dia--sem-saber-docker)
+tem os três comandos para parar, iniciar e acompanhar o appliance.
+
 ### A senha do primeiro acesso é de uso único
 
 No fim da instalação o script mostra o usuário e a senha do administrador. A
@@ -602,36 +607,64 @@ Pré-requisitos (o instalador verifica e orienta): Docker em execução
 No Ubuntu: `sudo apt-get install -y docker.io docker-compose-v2 python3 openssl`
 e adicione-se ao grupo (`sudo usermod -aG docker $USER`, relogue).
 
-### Windows
+### Windows — pelo WSL, e o porquê
 
-Há três caminhos, e **todos funcionam**. Escolha pelo que você já tem:
+> **Recomendação: instale pelo WSL**, o subsistema Linux que já vem no próprio
+> Windows, e não pelo Docker Desktop. Os dois funcionam e o Desktop é
+> suportado — mas o Desktop exige **assinatura comercial** para empresas acima
+> de certo porte, e o WSL é o caminho que o nosso instalador exercita em
+> ambiente automatizado a cada versão.
 
-**1. Nada instalado — o caminho recomendado.** Clique com o botão direito em
-`install.bat` → **Executar como administrador**. Ele instala o WSL2 e o Docker
-Engine dentro dele, roda a instalação e ainda confia na CA no repositório do
-Windows (Chrome, Edge e Firefox). **Não precisa de Docker Desktop**, e por isso
-não há a exigência de licença comercial que ele impõe a empresas maiores.
+O WSL encaminha `localhost` sozinho: o navegador do Windows abre
+`https://localhost` normalmente, sem endereço de VM nem IP.
 
-**2. Já tem Docker Desktop.** Ligue a integração com o WSL em *Settings →
-Resources → WSL integration*, abra o Ubuntu e rode `./install.sh`. O `docker`
-de dentro do WSL já fala com o daemon do Windows; nada é instalado no Linux.
+**Caminho A — automático.** Clique com o botão direito em `install.bat` →
+**Executar como administrador**. Ele instala o WSL2, o Docker Engine dentro
+dele, roda a instalação e confia na CA no repositório do Windows (Chrome, Edge
+e Firefox). Se o WSL ainda não existia, ele pede para **reiniciar o Windows** e
+continuar rodando o mesmo arquivo — o progresso não se perde. A instalação fica
+em **`/opt/hormos`**, dentro do WSL.
 
-**3. Já está dentro do WSL com Ubuntu.** `./install.sh` resolve. Duas coisas
-que valem saber, porque são do WSL e não do Hormos:
+**Caminho B — manual**, para quando a política da máquina não permite executar
+um `.bat` como administrador. No **PowerShell como administrador**:
 
-- **Grupo `docker`.** Instalar o Docker Engine não dá acesso ao socket ao seu
-  usuário na mesma sessão — credencial de grupo é fixada no login. O instalador
-  detecta isso, te põe no grupo e **se reabre já dentro dele**, sem você sair e
-  entrar no terminal. Se ainda assim pedir, rode `newgrp docker` e repita.
-- **systemd.** O serviço do Docker só sobe sozinho se o systemd estiver ligado,
-  e ele **não vem ligado por padrão**. Uma vez só:
+```powershell
+wsl --install -d Ubuntu
+```
 
-  ```bash
-  sudo sh -c 'printf "[boot]\nsystemd=true\n" >> /etc/wsl.conf'
-  ```
+Reinicie, abra o **Ubuntu** e crie o usuário do Linux. Depois, dentro do Ubuntu:
 
-  depois `wsl --shutdown` no PowerShell, reabra o Ubuntu e rode de novo. Sem
-  systemd, dá para subir à mão com `sudo service docker start`.
+```bash
+# 1. systemd — sem ele o serviço do Docker não sobe sozinho
+sudo sh -c 'printf "[boot]\nsystemd=true\n" >> /etc/wsl.conf'
+#    feche o Ubuntu, rode `wsl --shutdown` no PowerShell e reabra
+
+# 2. Docker Engine (open source, sem licença comercial)
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+#    FECHE E ABRA O TERMINAL — credencial de grupo só vale em sessão nova
+
+# 3. confira, e instale
+docker ps
+git clone https://github.com/hormosgrc/hormos.git
+cd hormos && ./install.sh
+```
+
+**Já tem Docker Desktop?** Ligue a integração em *Settings → Resources → WSL
+integration*, abra o Ubuntu e rode `./install.sh`. O `docker` de dentro do WSL
+já fala com o daemon do Windows; nada é instalado no Linux.
+
+**As duas particularidades do WSL** que o instalador trata, mas convém conhecer,
+porque explicam quase todo tropeço:
+
+- **Grupo `docker`.** Entrar no grupo não vale para a sessão em curso —
+  credencial de grupo é fixada no login. O instalador detecta a falta de
+  permissão, te põe no grupo e **se reabre já dentro dele**. Quando não
+  consegue (falta o `sg`, que vem do pacote `passwd`), ele **diz o motivo** e
+  imprime o comando com o caminho completo, porque `newgrp` abre um shell novo
+  que começa no `$HOME` — onde o `install.sh` não está.
+- **systemd.** Não vem ligado por padrão, e sem ele o Docker não sobe sozinho.
+  Sem systemd, dá para subir à mão com `sudo service docker start`.
 
 A CA interna é instalada no repositório do **Windows** (é lá que o navegador
 roda), não só no do Linux — senão o aviso de certificado continuaria.
@@ -662,6 +695,60 @@ Pré-requisitos no cliente: **2 registros DNS** (`grc.cliente.com.br` e
 abertas** para a internet. É idempotente — rode de novo para trocar de domínio;
 o acesso local por `https://localhost` continua ativo para contingência
 (`http://localhost` e `:8080` redirecionam para lá).
+
+## Operação no dia a dia — sem saber Docker
+
+Quem vai homologar o appliance num desktop ou notebook talvez nunca tenha usado
+Docker, e não precisa. São três comandos, e eles funcionam **de qualquer
+pasta** — não é preciso voltar ao diretório da instalação, que é justamente
+onde as instruções costumam falhar.
+
+```bash
+docker compose -p sgsi-appliance-core ps       # está no ar?
+docker compose -p sgsi-appliance-core stop     # parar tudo (nada é apagado)
+docker compose -p sgsi-appliance-core start    # ligar de volta
+```
+
+`sgsi-appliance-core` é o nome do projeto Compose, fixado no `docker-compose.yml`.
+O Compose descobre o projeto pelos rótulos dos contêineres, então o `-p` dispensa
+o `cd`. O `start` traz **inclusive o Ollama**, que está atrás de um `profile` —
+verificado num ciclo completo da pilha.
+
+**Parar não apaga nada:** os dados vivem em volumes, separados dos contêineres.
+E uma vez parado **fica parado, inclusive depois de reiniciar a máquina**, até
+alguém mandar ligar — é o que `restart: unless-stopped` significa, e é o
+comportamento desejado: quem desligou quer que continue desligado.
+
+| Contêiner | O que é |
+|---|---|
+| `sgsi_portal` | o Hormos em si — telas, motores, relatórios |
+| `sgsi_postgres` | o banco. **É aqui que os dados do cliente vivem.** |
+| `sgsi_keycloak` | login: usuários, senhas, SSO e MFA |
+| `sgsi_caddy` | entrada HTTPS (quem atende o `https://localhost`) |
+| `sgsi_oauth2_portal` | o porteiro entre a entrada e o portal |
+| `sgsi_configurator` | aplica domínio e certificado pedidos na área admin |
+| `sgsi_ollama` | o Analista IA — **só existe se instalado com IA** |
+
+Quando precisar de mais:
+
+```bash
+docker compose -p sgsi-appliance-core restart
+docker compose -p sgsi-appliance-core logs -f --tail=100 sgsi-portal
+
+cd /opt/hormos && git pull && docker compose pull && docker compose up -d  # atualizar
+cd /opt/hormos && docker compose down       # remover os contêineres, MANTENDO os dados
+```
+
+> `docker compose down -v` remove **também os volumes** — apaga o banco e tudo
+> o que foi registrado, sem desfazer. Só com essa intenção.
+
+**No Windows, depois de reiniciar:** o WSL **não roda em segundo plano
+sozinho**. Se o `https://localhost` não responder, abra o aplicativo **Ubuntu**
+uma vez — com o systemd ligado, o Docker sobe junto e os contêineres voltam.
+É o chamado de suporte mais provável, e não é defeito.
+
+O guia equivalente para o cliente final, com telas e sem jargão, está em
+<https://hormosgrc.github.io/instalacao.html>.
 
 ## Atualização do v1.x
 
