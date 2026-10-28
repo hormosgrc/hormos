@@ -108,8 +108,35 @@ wsl -d %DISTRO% -u root -- bash -c "systemctl enable --now docker >/dev/null 2>&
 
 REM ── 5. Copia o projeto para dentro do WSL e instala ───────────────
 echo  [5/6] Preparando o Hormos dentro do WSL...
-for /f "usebackq delims=" %%i in (`wsl -d %DISTRO% -u root -- wslpath "'%CD%'"`) do set "SRC=%%i"
-wsl -d %DISTRO% -u root -- bash -c "mkdir -p /opt/hormos && cp -r '%SRC%/.' /opt/hormos/ 2>/dev/null; cd /opt/hormos && chmod +x install.sh scripts/*.sh 2>/dev/null; true"
+REM  `wslpath "%CD%"` e NAO `wslpath "'%CD%'"`. Com as aspas simples por
+REM  dentro, elas entravam no VALOR: o wslpath recebia o caminho ja entre
+REM  aspas, nao convertia para /mnt/c/... e devolvia literalmente
+REM  'C:/Users/.../hormos-main (1)/hormos-main'. A linha montada virava
+REM  cp -r ''C:/...'/.' - aspas vazias, caminho SEM protecao e, quando a
+REM  pasta tinha parenteses, erro de sintaxe no bash.
+REM
+REM  E a pasta TEM parenteses no caso mais comum: quem baixa o zip duas
+REM  vezes recebe "hormos-main (1)" do proprio Windows. O caminho do
+REM  usuario e o que tem espaco e parenteses, nao o do desenvolvedor.
+set "SRC="
+for /f "usebackq delims=" %%i in (`wsl -d %DISTRO% -u root -- wslpath "%CD%"`) do set "SRC=%%i"
+if not defined SRC (
+    echo  X Nao foi possivel converter o caminho desta pasta para o WSL.
+    echo    Pasta: %CD%
+    pause ^& exit /b 1
+)
+
+REM  Sem `2^>/dev/null` e sem `; true` na copia: engolir o erro aqui fazia a
+REM  falha aparecer tres comandos adiante, num "cd: No such file or
+REM  directory" que nao diz a causa. Erro de copia tem de falar na hora.
+wsl -d %DISTRO% -u root -- bash -c "mkdir -p /opt/hormos && cp -r '%SRC%/.' /opt/hormos/"
+if %errorLevel% neq 0 (
+    echo  X Falha ao copiar os arquivos para dentro do WSL.
+    echo    Origem: %CD%
+    echo    Confira se a pasta foi descompactada por completo.
+    pause ^& exit /b 1
+)
+wsl -d %DISTRO% -u root -- bash -c "cd /opt/hormos && chmod +x install.sh scripts/*.sh 2>/dev/null; true"
 echo       Executando a instalacao (pode demorar na primeira vez)...
 wsl -d %DISTRO% -u root -- bash -c "cd /opt/hormos && ./install.sh local"
 if %errorLevel% neq 0 (
