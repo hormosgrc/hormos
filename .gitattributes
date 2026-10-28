@@ -1,0 +1,26 @@
+# Finais de linha — o que o Windows exige e o que o ZIP entrega.
+#
+# O `install.bat` estava gravado com finais de linha LF, e um arquivo de lote
+# com LF é lido errado pelo cmd.exe: ele espera CR+LF, e sem o CR os `goto`,
+# os rótulos, os `if` e os blocos entre parênteses se comportam de forma
+# errática. O sintoma relatado foi a janela abrir e fechar na hora.
+#
+# POR QUE NINGUÉM TINHA VISTO: quem faz `git clone` no Windows tem
+# `core.autocrlf=true` por padrão, e o git converte na saída — o arquivo
+# chega correto e funciona. Já o "Download ZIP" do GitHub entrega os bytes
+# COMO ESTÃO NO REPOSITÓRIO, sem conversão nenhuma. Ou seja, o defeito só
+# atinge quem baixa o zip — que é justamente o caminho de quem não é
+# desenvolvedor, e é o caminho que o guia de instalação recomenda.
+#
+# `eol=crlf` grava o CRLF no próprio objeto do repositório, então o zip passa
+# a sair certo também. Não basta converter o arquivo uma vez: sem esta regra,
+# o próximo commit feito num Mac ou Linux o devolveria para LF.
+*.bat text eol=crlf
+
+# O resto do mundo é LF, inclusive o que roda DENTRO do contêiner. Um .sh com
+# CRLF quebra com "bad interpreter: /bin/bash^M", que é o defeito espelhado
+# deste e igualmente obscuro.
+*.sh  text eol=lf
+*.py  text eol=lf
+*.yml text eol=lf
+*.sql text eol=lf
