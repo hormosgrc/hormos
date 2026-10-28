@@ -230,6 +230,125 @@ command -v openssl >/dev/null 2>&1 || {
 # dos segredos do appliance. Achado pela suíte F da bateria.
 chmod 600 .env 2>/dev/null || true
 chmod +x scripts/*.sh *.sh 2>/dev/null || true
+
+# ── Reconciliar o .env com o .env.example ───────────────────────────────────
+# `[ -f .env ] || cp` protege os SEGREDOS, e isso está certo: regerar a senha
+# do banco numa instalação em uso destruiria o acesso. Mas ele congela TODO o
+# resto para sempre — e aí mora um defeito que custou caro.
+#
+# O Keycloak passou a atender em /auth na mesma origem do portal, e o
+# `.env.example` foi corrigido. Só que quem JÁ tinha instalado continuou com
+# `KEYCLOAK_PUBLIC_URL=https://localhost:8443` — uma porta que o compose não
+# publica e onde ninguém escuta. O login ficava morto, reinstalar não
+# adiantava, e nada na tela dizia por quê. Corrigir o exemplo conserta a
+# máquina virgem; não conserta ninguém que já instalou, que é quem reclama.
+#
+# Agora:
+#   · chave que existe no exemplo e falta no .env  → ACRESCENTADA
+#   · chave de SEGREDO                             → nunca tocada
+#   · chave existente com valor diferente          → AVISADA, não trocada,
+#     porque ali pode haver configuração legítima do cliente (domínio próprio)
+#   · valor sabidamente MORTO                      → corrigido, dizendo o quê
+#
+# O último caso é estreito de propósito: só entra aqui o que o produto não
+# serve mais em endereço nenhum. Trocar configuração do cliente por conta
+# própria seria pior que o defeito.
+if [ -f .env.example ]; then
+  python3 - <<'PY' || true
+import os, re, shutil
+
+# Comparacao por PALAVRA, nao por substring. Com `'KEY' in chave` a variavel
+# KEYCLOAK_PUBLIC_URL era classificada como segredo — KEYCLOAK comeca com KEY —
+# e ficava de fora da correcao. O teste pegou: o whitelist era corrigido e o
+# endereco do Keycloak continuava apontando para a porta morta.
+SEGREDO = {'SECRET', 'PASSWORD', 'PASS', 'KEY', 'TOKEN', 'COOKIE'}
+def segredo(chave):
+    return any(t in SEGREDO for t in chave.upper().split('_'))
+
+# (regex no valor, valor novo, por que mudou)
+MORTOS = [
+    (r'^https?://localhost:8443/?$', 'https://localhost/auth',
+     'o Keycloak atende em /auth na mesma origem; a 8443 nao e publicada'),
+    (r'^localhost:8443$', 'localhost',
+     'mesma origem do portal'),
+    # A escada de modelos por RAM foi REMOVIDA: o produto roda um modelo so.
+    # Um .env antigo mantinha o qwen2.5, e o instalador baixava 4,7 GB do
+    # modelo que o produto nao usa mais — sem dizer nada.
+    (r'^qwen2\.5[:.].*$', 'qwen3:8b',
+     'o produto passou a usar um unico modelo, o qwen3:8b'),
+    (r'^qwen3:(1\.5|3)b$', 'qwen3:8b',
+     'os modelos menores foram removidos do produto'),
+]
+
+def ler(p):
+    fora = {}
+    try:
+        with open(p, encoding='utf-8') as fh:
+            for l in fh:
+                s = l.strip()
+                if s and not s.startswith('#') and '=' in s:
+                    k, v = s.split('=', 1)
+                    fora[k.strip()] = v.strip()
+    except OSError:
+        pass
+    return fora
+
+atual, exemplo = ler('.env'), ler('.env.example')
+if not atual:
+    raise SystemExit(0)
+
+corrigir, acrescentar, avisar = {}, {}, []
+
+for k, v in atual.items():
+    if segredo(k):
+        continue
+    for padrao, novo, motivo in MORTOS:
+        if re.match(padrao, v):
+            corrigir[k] = (v, novo, motivo)
+            break
+
+for k, v in exemplo.items():
+    if k not in atual and not segredo(k) and v and not v.startswith('CHANGE_ME'):
+        acrescentar[k] = v
+    elif k in atual and not segredo(k) and k not in corrigir and atual[k] != v:
+        avisar.append((k, atual[k], v))
+
+if not (corrigir or acrescentar):
+    raise SystemExit(0)
+
+shutil.copy2('.env', '.env.bak')
+with open('.env', encoding='utf-8') as fh:
+    linhas = fh.readlines()
+saida = []
+for l in linhas:
+    s = l.strip()
+    if s and not s.startswith('#') and '=' in s:
+        k = s.split('=', 1)[0].strip()
+        if k in corrigir:
+            _, novo, _m = corrigir[k]
+            saida.append('%s=%s\n' % (k, novo))
+            continue
+    saida.append(l)
+if acrescentar:
+    saida.append('\n# Acrescentadas pelo instalador (faltavam neste .env)\n')
+    for k, v in acrescentar.items():
+        saida.append('%s=%s\n' % (k, v))
+with open('.env', 'w', encoding='utf-8') as fh:
+    fh.writelines(saida)
+os.chmod('.env', 0o600)
+
+print('Configuracao: .env reconciliado (copia anterior em .env.bak)')
+for k, (velho, novo, motivo) in corrigir.items():
+    print('  corrigido  %s' % k)
+    print('             de  %s' % velho)
+    print('             para %s   (%s)' % (novo, motivo))
+for k, v in acrescentar.items():
+    print('  acrescentado %s=%s' % (k, v))
+for k, a, b in avisar[:5]:
+    print('  (diferente do padrao, MANTIDO: %s=%s / exemplo: %s)' % (k, a, b))
+PY
+fi
+
 if grep -q CHANGE_ME .env; then ./generate-secrets.sh; fi
 ./scripts/render-keycloak-realm.sh
 # preserva o Caddyfile de produção (domínio próprio via ./configurar-dominio.sh)
