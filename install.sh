@@ -405,7 +405,38 @@ fi
 
 # ── Subida ───────────────────────────────────────────────────────────
 if [ "$RESET" = "--reset" ]; then $DC down -v || true; fi
-$DC pull
+# `|| verificar`, e não `$DC pull` seco. Sob `set -e`, uma falha QUALQUER do
+# pull abortava a instalação inteira — inclusive um tropeço passageiro da CDN
+# do Docker Hub com TODAS as imagens já baixadas. Aconteceu na primeira
+# execução da suíte H: `failed to copy: httpReadSeeker: ... EOF` no meio do
+# download, e a instalação morreu sem nenhuma causa de produto.
+#
+# Num cliente com internet instável isso é o modo de falha mais provável de
+# todos. Então: tenta baixar; falhando, confere se o que é preciso já está
+# aqui. Se estiver, segue com aviso — não há o que baixar. Se não estiver,
+# aí sim para, dizendo que é rede e não configuração.
+if ! $DC pull; then
+  echo
+  echo "⚠ O download das imagens falhou (rede instável ou registro fora)."
+  faltando=""
+  for img in $($DC config --images 2>/dev/null | sort -u); do
+    # Imagem CONSTRUÍDA aqui (o configurator) não vem de registro e sai da
+    # listagem sem tag — cobrá-la daria um "faltando" falso na primeira
+    # instalação, antes de ela existir.
+    case "$img" in *:*) ;; *) continue ;; esac
+    docker image inspect "$img" >/dev/null 2>&1 || faltando="$faltando $img"
+  done
+  if [ -n "$faltando" ]; then
+    echo "✖ E estas imagens NÃO estão nesta máquina:"
+    for i in $faltando; do echo "    $i"; done
+    echo
+    echo "  Confira a conexão e rode ./install.sh de novo — o que já baixou"
+    echo "  fica guardado, então a segunda tentativa continua de onde parou."
+    exit 1
+  fi
+  echo "  Mas todas as imagens necessárias já estão nesta máquina — seguindo."
+  echo
+fi
 docker run --rm -v "$PWD/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile
 # Sem --build: o cliente recebe a IMAGEM publicada e assinada, não o código.
 # Para desenvolver a partir do fonte, use docker-compose.dev.yml.
