@@ -412,6 +412,22 @@ docker run --rm -v "$PWD/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine
 $DC up -d
 sleep 15
 
+# ── A senha do banco confere com a do .env? ─────────────────────────────
+# ANTES de qualquer outra coisa, porque é a falha que derruba o Keycloak em
+# laço e NÃO se anuncia: as senhas nos contêineres conferem entre si, e mesmo
+# assim o login não sobe. `POSTGRES_PASSWORD` só vale na INICIALIZAÇÃO do
+# diretório de dados; num volume que veio de instalação anterior, o papel
+# mantém a senha de então. E o volume sobrevive a apagar a pasta e reextrair
+# o zip, porque o nome do projeto Compose é fixo.
+#
+# Numa instalação real no Windows (28/10/2026) isso exigiu que a pessoa
+# soubesse Docker, PostgreSQL e Keycloak para destravar um instalador
+# anunciado como automático. O script conserta pelo caminho `trust` local.
+./scripts/realinhar-senha-banco.sh || {
+  echo "  ! A autenticação do banco ficou pendente — o Keycloak pode não subir."
+  echo "    Veja a mensagem acima antes de seguir."
+}
+
 # O --import-realm só vale para realm novo: num appliance já instalado, a marca
 # da tela de login vive no banco do Keycloak e não acompanha o arquivo.
 ./scripts/sincronizar-marca-keycloak.sh || true
@@ -500,10 +516,38 @@ echo
 echo "  ↑ Esta senha vale para UM acesso: o sistema vai pedir que você defina"
 echo "    a sua no primeiro login. Até lá, ela está visível neste terminal —"
 echo "    feche-o depois, e não cole esta saída em e-mail nem em chamado."
+echo
+# A senha sumiu numa instalação real: a janela do instalador fechou antes do
+# primeiro login e não havia como recuperá-la. Ela SEMPRE esteve no .env, mas
+# ninguém sabia — e saber disso é a diferença entre reabrir o terminal e
+# reinstalar o appliance. No Windows há um degrau a mais: o arquivo vive
+# DENTRO do WSL, não numa pasta do Explorador.
+echo "  Se perder esta senha antes do primeiro login, ela está no .env:"
+if [ -n "${EH_WSL:-}" ]; then
+  echo "      no Ubuntu:      grep MASTER_PASSWORD $PWD/.env"
+  echo "      no PowerShell:  wsl -d Ubuntu -u root grep MASTER_PASSWORD $PWD/.env"
+else
+  echo "      grep MASTER_PASSWORD $PWD/.env"
+fi
+echo "  Depois do primeiro login ela não vale mais — a senha passa a ser a sua,"
+echo "  e a recuperação é pela tela de login (Esqueci minha senha)."
 if [ "$IA" = "1" ]; then
   echo "Analista IA: ATIVO (LLM local ${MODEL:-$IA_MODELO})"
 else
   echo "Analista IA: motor semântico embarcado ativo. Para o LLM local: rode ./install.sh de novo e responda 's'."
+fi
+
+# ── O appliance está REALMENTE no ar? ───────────────────────────────────
+# O instalador dizia "pressione qualquer tecla" e encerrava mesmo com o login
+# fora do ar — a pessoa só descobria abrindo o navegador, e depois tinha de
+# investigar `docker ps -a` sozinha. Declarar sucesso sem conferir transfere
+# ao usuário o trabalho de descobrir que falhou.
+if ! ./scripts/conferir-saude.sh "${PROD_DOMAIN:+https://$PROD_DOMAIN}"; then
+  echo
+  echo "A instalação terminou, mas o appliance ainda não está utilizável."
+  echo "As linhas acima dizem o que fazer. Depois de corrigir, confira com:"
+  echo "    ./scripts/conferir-saude.sh"
+  exit 1
 fi
 
 # ── Como operar depois ────────────────────────────────────────────────────

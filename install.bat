@@ -203,6 +203,25 @@ echo.
 echo   Guia completo: https://hormosgrc.github.io/instalacao.html
 echo  ───────────────────────────────────────────────────────────────
 echo.
+echo   SE A SENHA DO PRIMEIRO ACESSO SE PERDEU
+echo.
+REM  Aconteceu numa instalacao real: a janela fechou antes do primeiro
+REM  login e a pessoa achou que precisaria reinstalar. A senha sempre
+REM  esteve no .env, so que DENTRO do WSL — nao numa pasta do Explorador.
+echo     Cole no PowerShell ^(nao no Ubuntu^):
+echo.
+echo       wsl -d %DISTRO% -u root grep MASTER_PASSWORD /opt/hormos/.env
+echo.
+echo   Ela vale para UM acesso. Depois do primeiro login a senha passa
+echo   a ser a sua, e a recuperacao e pela propria tela de login.
+echo.
+echo   ONDE RODAR CADA COMANDO
+echo     - comeca com "wsl"            -^> PowerShell do Windows
+echo     - comeca com "docker"         -^> aplicativo Ubuntu
+REM  O relato de instalacao trouxe `wsl -d Ubuntu -u root` rodado DENTRO
+REM  do Ubuntu, com "Command 'wsl' not found" — comando certo, ambiente
+REM  errado. Esta regra de bolso resolve o caso que de fato apareceu.
+echo.
 start "" "https://localhost"
 pause
 endlocal
