@@ -110,6 +110,33 @@ registro é descartado em favor do texto técnico completo.
 install.bat           # Windows (instala WSL2 + Docker Engine)
 ```
 
+### Três credenciais nascem aqui — tenha onde anotar
+
+Uma instalação real travou no fim porque a senha do primeiro acesso não foi
+anotada e a janela do instalador fechou. Tenha o gerenciador de senhas à mão
+**antes** de começar:
+
+| | o que é | se perder |
+|---|---|---|
+| **Ubuntu/WSL** (só Windows) | o próprio Ubuntu pede no primeiro boot; é a senha que o `sudo` cobra | não há recuperação simples |
+| **primeiro acesso ao Hormos** | o instalador imprime no fim; vale para **um** login | está no `.env` até o primeiro login |
+| **a que você definir no 1º login** | passa a ser a de verdade | `./scripts/redefinir-senha-admin.sh` |
+
+As senhas internas — banco, console de login — são geradas sozinhas e ficam no
+`.env`. Você não precisa delas no dia a dia.
+
+### No Windows há DOIS terminais, e colar no errado dá erro sem explicação
+
+Num relato de instalação real, `wsl -d Ubuntu -u root` foi rodado **dentro** do
+Ubuntu e devolveu `Command 'wsl' not found` — comando certo, terminal errado.
+A regra de bolso:
+
+- começa com `wsl` → **PowerShell do Windows**
+- começa com `docker`, `cd`, `sudo` ou `./` → **aplicativo Ubuntu**
+
+O PowerShell mostra um caminho começando com `C:\`; o Ubuntu mostra algo como
+`usuario@maquina:~$`.
+
 O compose puxa a **imagem publicada e assinada** — não constrói a partir do
 código-fonte.
 
@@ -132,6 +159,48 @@ instalação colada num chamado de suporte — todos caminhos reais. Sendo de us
 
 Feche o terminal quando terminar, e não cole a saída da instalação em e-mail ou
 chamado sem apagar essa linha.
+
+#### Perdeu a senha?
+
+**Antes do primeiro login** ela ainda está no arquivo de configuração:
+
+```bash
+grep MASTER_PASSWORD /opt/hormos/.env
+# no Windows, a partir do PowerShell (o arquivo vive DENTRO do WSL):
+wsl -d Ubuntu -u root grep MASTER_PASSWORD /opt/hormos/.env
+```
+
+**Depois do primeiro login** ela não vale mais — a sua substituiu a dela, e não
+fica guardada em lugar nenhum, nem conosco. Redefina:
+
+```bash
+cd /opt/hormos && ./scripts/redefinir-senha-admin.sh
+```
+
+Lista os usuários, pergunta qual e pede a nova sem mostrá-la na tela. Funciona
+offline, sem e-mail e sem suporte.
+
+**Por que não há "Esqueci minha senha".** O botão de recuperação por e-mail
+exigiria servidor de e-mail e acesso à internet. O appliance não fala com a
+internet depois de instalado, por desenho — trocar isso por um botão de
+conveniência seria vender a premissa do produto por um atalho. Conferido no
+realm: sem `resetPasswordAllowed` e sem `smtpServer`, de propósito.
+
+### Quando a instalação termina e o portal não abre
+
+```bash
+cd /opt/hormos && ./scripts/conferir-saude.sh
+```
+
+Confere as quatro peças que precisam estar de pé e, falhando alguma, diz o
+comando do conserto. O caso mais comum é a tela de login não subir porque o
+banco recusa a senha — acontece quando o Hormos já foi instalado nesta máquina
+antes, porque o banco é preservado de propósito e guardou a senha daquela
+instalação:
+
+```bash
+./scripts/realinhar-senha-banco.sh && docker restart sgsi_keycloak
+```
 
 ### Conferindo a assinatura antes de rodar
 

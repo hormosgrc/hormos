@@ -166,8 +166,16 @@ KC_ADMIN="$(grep '^KEYCLOAK_ADMIN=' .env | cut -d= -f2-)"
 KC_PASS="$(grep '^KEYCLOAK_ADMIN_PASSWORD=' .env | cut -d= -f2-)"
 REALM="$(grep '^KEYCLOAK_REALM=' .env | cut -d= -f2-)"; REALM="${REALM:-sgsi}"
 echo "Atualizando as redirect URIs no Keycloak (realm ${REALM})..."
+# O Keycloak serve sob /auth (KC_HTTP_RELATIVE_PATH no compose). SEM o prefixo
+# o kcadm recebe 404 — e este bloco caía no ramo "Keycloak ainda subindo?", que
+# manda esperar por um problema que não é de tempo. Resultado: as redirect URIs
+# NUNCA eram atualizadas ao configurar domínio próprio, e o aviso dizia a causa
+# errada. Achado em 02/11/2026, ao escrever o script de redefinição de senha,
+# que copiou esta mesma linha e falhou igual.
+KC_URL="http://localhost:8080$(grep -E '^\s*KC_HTTP_RELATIVE_PATH:' docker-compose.yml \
+        | head -1 | cut -d: -f2- | tr -d ' \r')"
 if $DC exec -T keycloak /opt/keycloak/bin/kcadm.sh config credentials \
-     --server http://localhost:8080 --realm master \
+     --server "$KC_URL" --realm master \
      --user "$KC_ADMIN" --password "$KC_PASS" >/dev/null 2>&1; then
   CID="$($DC exec -T keycloak /opt/keycloak/bin/kcadm.sh get clients -r "$REALM" \
          -q clientId=sgsi-gateway --fields id --format csv --noquotes 2>/dev/null | head -1 | tr -d '\r')"
@@ -180,7 +188,7 @@ if $DC exec -T keycloak /opt/keycloak/bin/kcadm.sh config credentials \
     echo "⚠ Client sgsi-gateway não encontrado no realm ${REALM} — atualize as Redirect URIs manualmente no console."
   fi
 else
-  echo "⚠ Não foi possível autenticar no kcadm (Keycloak ainda subindo?)."
+  echo "⚠ Não foi possível autenticar no kcadm em $KC_URL."
   echo "  Rode novamente: ./configurar-dominio.sh ${PORTAL_DOMAIN} ${AUTH_DOMAIN}"
 fi
 

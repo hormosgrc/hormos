@@ -529,8 +529,14 @@ if [ -n "${EH_WSL:-}" ]; then
 else
   echo "      grep MASTER_PASSWORD $PWD/.env"
 fi
-echo "  Depois do primeiro login ela não vale mais — a senha passa a ser a sua,"
-echo "  e a recuperação é pela tela de login (Esqueci minha senha)."
+echo "  Depois do primeiro login ela não vale mais — a senha passa a ser a sua."
+# NÃO existe "Esqueci minha senha" aqui, e eu cheguei a escrever que existia.
+# O botão exigiria servidor de e-mail, e o appliance não fala com a internet
+# depois de instalado, por desenho. Conferido no realm: sem resetPasswordAllowed
+# e sem smtpServer. Mandar a pessoa procurar esse botão é pior que não dizer
+# nada — ela gasta o tempo numa tela onde a saída não está.
+echo "  Perdeu depois de já ter entrado? Redefina pelo console, sem e-mail:"
+echo "      cd $PWD && ./scripts/redefinir-senha-admin.sh"
 if [ "$IA" = "1" ]; then
   echo "Analista IA: ATIVO (LLM local ${MODEL:-$IA_MODELO})"
 else
