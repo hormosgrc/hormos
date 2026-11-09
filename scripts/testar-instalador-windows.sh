@@ -37,6 +37,7 @@ checar(){ if [ "$2" = "$3" ]; then ok "$1"; else falha "$1 — obtive [$2], espe
 BAT=install.bat
 PS_ESTADO=scripts/estado-wsl.ps1
 PS_RETOMA=scripts/retomar-instalacao.ps1
+PS_CRED=scripts/gravar-credenciais.ps1
 
 echo "═══ A · estrutura do install.bat ═══"
 
@@ -98,7 +99,7 @@ else
   ok "não decide mais por 'where wsl'"
 fi
 
-for f in "$PS_ESTADO" "$PS_RETOMA"; do
+for f in "$PS_ESTADO" "$PS_RETOMA" "$PS_CRED"; do
   base=$(basename "$f")
   grep -qF "$base" "$BAT" || falha "o .bat não chama o $base"
   [ -f "$f" ]              || falha "$f não existe"
@@ -219,6 +220,35 @@ docker-desktop" "$enc" 0 Ubuntu
     distro "sem Ubuntu nenhum"         'Debian'       "$enc" 1 ''
     distro "lista vazia"               ''             "$enc" 1 ''
   done
+
+  echo
+  echo "═══ D2 · o arquivo de credenciais ═══"
+  # Mostrar senha na tela e dizer "anote" falha com usuário leigo: um Enter
+  # distraído fecha a janela e a pessoa perde o acesso ao próprio terminal.
+  # Então o arquivo é parte da entrega, e o que ele contém é testável.
+  TMPD=$(mktemp -d)
+  arq=$(pwsh -NoProfile -File "$PS_CRED" -UsuarioWsl hormos -SenhaWsl SENHAwsl123456 \
+        -UsuarioHormos admin@teste.com -SenhaHormos SENHAhormos99 2>/dev/null)
+  if [ -n "$arq" ] && [ -f "$arq" ]; then
+    ok "gravou o arquivo e devolveu o caminho"
+    grep -qF 'SENHAwsl123456'  "$arq" && ok "traz a senha do Ubuntu"  || falha "sem a senha do Ubuntu"
+    grep -qF 'SENHAhormos99'   "$arq" && ok "traz a senha do Hormos"  || falha "sem a senha do Hormos"
+    grep -qF 'admin@teste.com' "$arq" && ok "traz o usuário do Hormos" || falha "sem o usuário do Hormos"
+    grep -qF 'hormos'          "$arq" && ok "traz o usuário do Ubuntu" || falha "sem o usuário do Ubuntu"
+    # Sem as duas recuperações o arquivo vira um bilhete que, perdido, não se refaz.
+    grep -qF '/root/.senha-ubuntu'  "$arq" && ok "diz como recuperar a do Ubuntu" || falha "não diz como recuperar a do Ubuntu"
+    grep -qF 'MASTER_PASSWORD'      "$arq" && ok "diz como recuperar a do Hormos" || falha "não diz como recuperar a do Hormos"
+    grep -qiF 'APAGUE'              "$arq" && ok "manda apagar o arquivo depois"  || falha "não avisa para apagar"
+    # ASCII puro: o Bloco de Notas antigo mostra "Ã§" onde houver acento, e o
+    # arquivo que explica a senha não pode ser o arquivo ilegível.
+    if LC_ALL=C grep -qP '[^\x00-\x7F]' "$arq" 2>/dev/null; then
+      falha "o arquivo tem caractere não-ASCII"
+    else ok "ASCII puro, abre igual em qualquer Windows"; fi
+    rm -f "$arq"
+  else
+    falha "não gravou o arquivo de credenciais"
+  fi
+  rmdir "$TMPD" 2>/dev/null
 
   echo
   echo "═══ E · contrato do retomar-instalacao.ps1 ═══"

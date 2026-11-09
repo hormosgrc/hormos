@@ -192,6 +192,31 @@ exit /b 0
 :checar_distro
 wsl --set-default-version 2 >nul 2>&1
 
+REM ── O prompt do Canonical, antes que ele exista ───────────────────
+REM  O Ubuntu recente pergunta, no primeiro uso interativo, se a pessoa quer
+REM  enviar metricas para a Canonical — e FICA PARADO esperando resposta.
+REM  Numa instalacao real foi o que sobrou: o Hormos subiu, mas o Ubuntu nao
+REM  completava o provisionamento ate alguem abrir o terminal e responder.
+REM
+REM  A documentacao da Canonical da a saida: HKCU\Software\Canonical\Ubuntu,
+REM  DWORD UbuntuInsightsConsent, 0 = nao participar, 1 = participar. O valor
+REM  e lido SO na criacao da instancia, por isso vem aqui, antes do
+REM  `wsl --install -d`.
+REM
+REM  Gravamos 0: nao e nossa decisao ligar telemetria para a Canonical em nome
+REM  de quem instala. E NAO sobrescrevemos se a chave ja existir — essa
+REM  resposta e da pessoa, nao do instalador.
+reg query "HKCU\Software\Canonical\Ubuntu" /v UbuntuInsightsConsent >nul 2>&1
+if %errorLevel% neq 0 (
+    reg add "HKCU\Software\Canonical\Ubuntu" /v UbuntuInsightsConsent /t REG_DWORD /d 0 /f >nul 2>&1
+    if !errorLevel! equ 0 (
+        echo       Telemetria da Canonical: desativada ^(nao perguntara^).
+    ) else (
+        echo       ! Nao consegui pre-responder o aviso de metricas do Ubuntu.
+        echo         Se ele aparecer ao abrir o Ubuntu, responda n e siga.
+    )
+)
+
 REM ── 2. Distribuicao Ubuntu ────────────────────────────────────────
 REM  Aqui ha DOIS estados que nao se confundem, e tratar os dois como um
 REM  so foi o defeito que apareceu em campo:
@@ -503,6 +528,21 @@ echo    para que ele releia os certificados.
 echo  ═══════════════════════════════════════════════
 echo.
 
+REM ── As credenciais, num arquivo em Documentos ─────────────────────
+REM  POR QUE EM ARQUIVO E NAO SO NA TELA: mostrar e dizer "anote" falha com
+REM  usuario leigo. Um Enter distraido fecha a janela, e a pessoa perde o
+REM  acesso ao proprio terminal sem saber o comando para recuperar.
+REM  Documentos porque e onde ela vai dar de cara com o arquivo depois.
+
+REM  As credenciais do Hormos saem do .env. Lidas com `tokens=1,* delims==`
+REM  para partir no primeiro "=" — sem pipe, sem aspas simples e sem `^^` no
+REM  meio, que e o tipo de linha que o cmd entrega ao bash diferente do que
+REM  esta escrita. Ja custou uma instalacao hoje.
+set "HORMOS_USUARIO="
+set "HORMOS_SENHA="
+for /f "usebackq tokens=1,* delims==" %%A in (`wsl -d %DISTRO% -u root -- grep -m1 MASTER_EMAIL /opt/hormos/.env`) do set "HORMOS_USUARIO=%%B"
+for /f "usebackq tokens=1,* delims==" %%A in (`wsl -d %DISTRO% -u root -- grep -m1 MASTER_PASSWORD /opt/hormos/.env`) do set "HORMOS_SENHA=%%B"
+
 REM ── A credencial do Ubuntu ────────────────────────────────────────
 REM  Mostrada aqui porque sem ela a pessoa nao abre o proprio terminal, e
 REM  todo o bloco "como parar e ligar" logo abaixo manda abrir o Ubuntu.
@@ -513,19 +553,44 @@ REM  A releitura e so para o caso de o passo 5 ter sido pulado.
 if not defined SENHA_WSL (
     for /f "usebackq delims=" %%P in (`wsl -d %DISTRO% -u root -- cat /root/.senha-ubuntu 2^>nul`) do set "SENHA_WSL=%%P"
 )
+REM  Grava o arquivo ANTES de imprimir qualquer coisa, para a mensagem da
+REM  tela poder dizer onde ele esta — ou dizer que nao deu, em vez de
+REM  prometer um arquivo que nao existe.
+set "ARQ_CRED="
+if defined SENHA_WSL (
+    for /f "usebackq delims=" %%F in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\gravar-credenciais.ps1" -UsuarioWsl "!USUARIO_WSL!" -SenhaWsl "!SENHA_WSL!" -UsuarioHormos "!HORMOS_USUARIO!" -SenhaHormos "!HORMOS_SENHA!" -Distro "!DISTRO!"`) do set "ARQ_CRED=%%F"
+)
+
 if defined SENHA_WSL (
     echo  ───────────────────────────────────────────────────────────────
-    echo   USUARIO E SENHA DO UBUNTU ^(ANOTE^)
+    echo   SUAS SENHAS
     echo.
-    echo     usuario:  %USUARIO_WSL%
+    echo   Ubuntu / WSL ^(o sistema^)
+    echo     usuario:  !USUARIO_WSL!
     echo     senha:    !SENHA_WSL!
     echo.
-    echo   Sao do Linux dentro do WSL, nao do Hormos. Servem para abrir o
-    echo   aplicativo "Ubuntu" e rodar os comandos abaixo.
-    echo.
-    echo   Esqueceu? No PowerShell:
-    echo     wsl -d %DISTRO% -u root cat /root/.senha-ubuntu
-    echo  ───────────────────────────────────────────────────────────────
+    if defined HORMOS_SENHA (
+        echo   Hormos ^(o portal, em https://localhost^)
+        echo     usuario:  !HORMOS_USUARIO!
+        echo     senha:    !HORMOS_SENHA!     ^(vale para UM acesso^)
+        echo.
+    )
+    if defined ARQ_CRED (
+        echo  ═══════════════════════════════════════════════════════════════
+        echo   NAO PRECISA ANOTAR. Esta tudo neste arquivo:
+        echo.
+        echo     !ARQ_CRED!
+        echo.
+        echo   Ele esta na sua pasta Documentos. Guarde as senhas no seu
+        echo   gerenciador e depois APAGUE o arquivo — ele tem senha em
+        echo   texto aberto, e quem abrir este computador le.
+        echo  ═══════════════════════════════════════════════════════════════
+    ) else (
+        echo   ! Nao consegui gravar o arquivo em Documentos. ANOTE as senhas
+        echo     acima antes de fechar esta janela. Para ver de novo depois:
+        echo       wsl -d !DISTRO! -u root cat /root/.senha-ubuntu
+        echo       wsl -d !DISTRO! -u root grep MASTER_PASSWORD /opt/hormos/.env
+    )
     echo.
 )
 

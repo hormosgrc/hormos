@@ -770,6 +770,24 @@ wsl -d Ubuntu -u root cat /root/.senha-ubuntu
 
 Rodar o instalador de novo não troca essa senha. Ela é do Linux, não do Hormos.
 
+**As senhas vão para um arquivo, não só para a tela.** Mostrar na tela e pedir
+para anotar falha com quem não é técnico: um Enter distraído fecha a janela e a
+pessoa perde o acesso ao próprio terminal sem saber o comando de recuperação —
+aconteceu. No fim da instalação o `install.bat` grava
+`Documentos\Hormos - usuario e senha.txt`, com a credencial do Ubuntu **e** a do
+primeiro acesso ao Hormos, mais como recuperar cada uma. O arquivo diz, nele
+mesmo, para ser apagado depois que as senhas forem guardadas.
+
+**O aviso de métricas da Canonical.** O Ubuntu recente pergunta, no primeiro uso
+interativo, se a pessoa quer enviar métricas para a Canonical — e fica parado
+esperando. Numa instalação real foi o que sobrou no fim: o Hormos subiu, mas a
+distribuição só completava o provisionamento quando alguém abria o terminal e
+respondia. O instalador agora pré-responde pelo registro do Windows
+(`HKCU\Software\Canonical\Ubuntu`, DWORD `UbuntuInsightsConsent`), com `0` —
+não é decisão nossa ligar telemetria em nome de quem instala. Se a chave já
+existir, **não** é sobrescrita: aquela resposta é da pessoa. O valor é lido só na
+criação da instância, por isso é gravado antes do `wsl --install -d`.
+
 **Quando a distribuição não executa** (`Wsl/Service/E_UNEXPECTED`, "Falha
 catastrófica"): é distribuição registrada com a instalação pela metade, resto
 de uma tentativa interrompida. Rodar o `install.bat` de novo resolve — ele tenta
