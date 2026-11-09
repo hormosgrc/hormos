@@ -207,6 +207,7 @@ REM  baixava o Ubuntu inteiro outra vez. Agora pergunta-se primeiro se
 REM  esta registrada (barato, nao inicializa nada) e so depois se roda.
 set "DISTRO=Ubuntu"
 set "ACHADA="
+set "INSTALEI_AGORA=0"
 for /f "usebackq delims=" %%R in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%DETECTA%" -Checar distro -Nome Ubuntu`) do set "ACHADA=%%R"
 
 if defined ACHADA (
@@ -224,35 +225,120 @@ if defined ACHADA (
         exit /b 1
     )
     echo  ✓ %DISTRO% baixado.
+    REM  O primeiro uso e concluido logo abaixo, DEPOIS de localizar o
+    REM  lancador: numa instalacao nova o ubuntu.exe so passa a existir agora,
+    REM  porque ele vem junto com o pacote da distribuicao. Procurar antes
+    REM  disso nao acharia nada.
+    set "INSTALEI_AGORA=1"
 )
 
 REM  Primeira inicializacao: extrai o sistema de arquivos. Pode levar um
 REM  minuto e parecer travado, entao se anuncia.
-echo       Inicializando o %DISTRO%...
-REM  A saida NAO vai para nul: quando isso falha, a mensagem do wsl.exe e a
-REM  unica pista do motivo. Manda-la para nul foi o que me obrigou a adivinhar
-REM  a causa — e eu adivinhei errado, culpei reinicio pendente numa maquina
-REM  cujo VirtualMachinePlatform estava Enabled.
-wsl -d %DISTRO% -u root -- true
-if %errorLevel% neq 0 (
-    REM  Segunda tentativa depois de derrubar o WSL: resolve o caso em que a
-    REM  distro ficou com estado sujo de uma instalacao interrompida.
-    echo       Primeira tentativa falhou; derrubando o WSL e tentando de novo...
+REM  Localiza o LANCADOR da distribuicao. Ele e o que conclui o primeiro uso
+REM  ("ubuntu.exe install --root"), e e o passo que o `wsl --install
+REM  --no-launch` deixa PENDENTE — era o buraco desta instalacao. Sem ele a
+REM  distro fica registrada e incapaz de executar, e quem abre o aplicativo
+REM  "Ubuntu" cai no "Enter new UNIX username".
+REM  O nome do executavel varia com a versao, entao procura-se.
+set "LANCADOR="
+REM  Bloco aninhado, e nao `if not defined X where ... ^&^& set`: ali o ^&^&
+REM  liga no `where`, e quando o `if` nao executa nada o errorLevel e o que
+REM  sobrou de antes — o `set` rodaria do mesmo jeito, gravando um lancador
+REM  que nao existe.
+for %%L in (ubuntu.exe ubuntu2404.exe ubuntu2204.exe ubuntu2004.exe) do (
+    if not defined LANCADOR (
+        where %%L >nul 2>&1
+        if !errorLevel! equ 0 set "LANCADOR=%%L"
+    )
+)
+
+REM  Instalacao NOVA: conclui o primeiro uso agora, sem esperar a escada de
+REM  conserto abaixo. E o caminho documentado — `install --root` termina a
+REM  instalacao sem pedir usuario nenhum, deixando so o root (o usuario da
+REM  pessoa e criado no passo 3). E a AUSENCIA deste passo que deixava a
+REM  distro registrada e incapaz de executar.
+if "%INSTALEI_AGORA%"=="1" if defined LANCADOR (
+    echo       Concluindo o primeiro uso ^(!LANCADOR! install --root^)...
+    !LANCADOR! install --root
     wsl --shutdown
     timeout /t 3 /nobreak >nul
-    wsl -d %DISTRO% -u root -- true
 )
-if %errorLevel% neq 0 (
-    REM  ESTE e o ponto exato onde a instalacao real falhou: o Ubuntu
-    REM  acabara de ser instalado, o script seguiu adiante, e todo o resto
-    REM  deu "permissao negada" sem dizer que a causa era reinicio pendente.
-    REM  Agora para aqui, explica, e oferece retomar sozinho.
+
+echo       Inicializando o %DISTRO%...
+set "TENTATIVA=0"
+
+:tentar_iniciar
+set /a TENTATIVA+=1
+REM  Saida na TELA: a mensagem do wsl.exe e a unica pista do motivo, e foi
+REM  manda-la para nul que me obrigou a adivinhar a causa — e eu adivinhei
+REM  errado, culpei reinicio pendente numa maquina sem reinicio pendente.
+wsl -d %DISTRO% -u root -- true
+if %errorLevel% equ 0 goto :distro_pronta
+
+if %TENTATIVA% equ 1 (
+    REM  Degrau 1 — o conserto mais relatado para Wsl/Service/E_UNEXPECTED e
+    REM  `wsl --update` seguido de `wsl --shutdown`. Barato e nao destroi nada.
     echo.
-    echo  ! O %DISTRO% esta registrado mas nao consegue executar.
-    echo    Duas causas possiveis: reinicio pendente do Windows, ou primeiro
-    echo    uso da distribuicao nao concluido. O quadro abaixo diz qual e.
-    goto :pedir_reinicio
+    echo       Nao respondeu. Atualizando o WSL e tentando de novo...
+    wsl --update
+    wsl --shutdown
+    timeout /t 3 /nobreak >nul
+    goto :tentar_iniciar
 )
+
+if %TENTATIVA% equ 2 (
+    REM  Degrau 2 — concluir o primeiro uso pelo lancador. E o passo que
+    REM  faltava: `install --root` termina a instalacao SEM pedir usuario, e
+    REM  deixa so o root. O usuario da pessoa e criado no passo 3, logo abaixo.
+    if defined LANCADOR (
+        echo.
+        echo       Concluindo o primeiro uso da distribuicao ^(!LANCADOR!^)...
+        !LANCADOR! install --root
+        wsl --shutdown
+        timeout /t 3 /nobreak >nul
+    ) else (
+        echo       Nao encontrei o lancador da distribuicao.
+    )
+    goto :tentar_iniciar
+)
+
+if %TENTATIVA% equ 3 (
+    REM  Degrau 3 — a esta altura a VHD da distro esta corrompida, e nenhum
+    REM  conserto a recupera: e apagar e refazer. Por isso PERGUNTA — isto
+    REM  destroi o sistema de arquivos do Ubuntu, sem lixeira.
+    echo.
+    echo  ═══════════════════════════════════════════════
+    echo   A distribuicao %DISTRO% esta danificada
+    echo.
+    echo   Nem a atualizacao do WSL nem a conclusao do
+    echo   primeiro uso resolveram. Isso indica disco da
+    echo   distribuicao corrompido, e o unico conserto e
+    echo   apagar e instalar de novo.
+    echo.
+    echo   ATENCAO: isso APAGA o Ubuntu e tudo dentro dele,
+    echo   sem lixeira. Se o Hormos ja estava instalado ali,
+    echo   os dados dele vao junto.
+    echo  ═══════════════════════════════════════════════
+    echo.
+    set "RESP="
+    set /p "RESP=  Apagar o %DISTRO% e instalar de novo? [s/N]: "
+    if /i "!RESP!"=="s" (
+        wsl --unregister %DISTRO%
+        wsl --install -d %DISTRO% --no-launch
+        if defined LANCADOR !LANCADOR! install --root
+        wsl --shutdown
+        timeout /t 3 /nobreak >nul
+        goto :tentar_iniciar
+    )
+    echo       Nao apaguei nada.
+)
+
+echo.
+echo  ! O %DISTRO% esta registrado mas nao consegue executar, e os tres
+echo    consertos automaticos nao resolveram.
+goto :pedir_reinicio
+
+:distro_pronta
 echo  ✓ %DISTRO% pronto.
 
 REM ── 3. O usuario do Linux ─────────────────────────────────────────
@@ -291,6 +377,11 @@ if %errorLevel% neq 0 (
 REM  default no wsl.conf: sem isto, abrir o aplicativo "Ubuntu" entra como
 REM  root, e a pessoa opera tudo como root sem saber que esta.
 wsl -d %DISTRO% -u root -- bash -c "grep -q '^\[user\]' /etc/wsl.conf 2>/dev/null || printf '[user]\ndefault=%USUARIO_WSL%\n' >> /etc/wsl.conf"
+REM  Alem do wsl.conf, o lancador tem o caminho proprio e documentado para
+REM  isto. Os dois juntos porque o wsl.conf e lido no boot da distro e o
+REM  lancador grava no registro do Windows — e qual dos dois vale depende da
+REM  versao do WSL. Fazer os dois custa uma linha.
+if defined LANCADOR %LANCADOR% config --default-user %USUARIO_WSL% >nul 2>&1
 echo  ✓ Usuario %USUARIO_WSL% criado ^(a senha aparece no fim^).
 
 REM ── 4. systemd (necessario para o servico do Docker subir sozinho) ─
