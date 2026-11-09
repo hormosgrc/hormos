@@ -756,6 +756,27 @@ O WSL encaminha `localhost` sozinho: o navegador do Windows abre
 dele, roda a instalação e confia na CA no repositório do Windows (Chrome, Edge
 e Firefox). A instalação fica em **`/opt/hormos`**, dentro do WSL.
 
+**O usuário do Ubuntu.** A distribuição é instalada sem interação, então ela
+nasce sem usuário nenhum — e quem abrisse o aplicativo "Ubuntu" depois cairia
+num `Enter new UNIX username`. O instalador resolve isso: conclui o primeiro
+uso da distribuição pelo lançador dela (`ubuntu.exe install --root`, o caminho
+documentado para fazer isso sem prompt), e então **cria o usuário `hormos`**
+com senha gerada, nos grupos `sudo` e `docker`, como usuário padrão. A
+credencial é impressa no fim e fica recuperável:
+
+```powershell
+wsl -d Ubuntu -u root cat /root/.senha-ubuntu
+```
+
+Rodar o instalador de novo não troca essa senha. Ela é do Linux, não do Hormos.
+
+**Quando a distribuição não executa** (`Wsl/Service/E_UNEXPECTED`, "Falha
+catastrófica"): é distribuição registrada com a instalação pela metade, resto
+de uma tentativa interrompida. Rodar o `install.bat` de novo resolve — ele tenta
+três consertos em ordem: `wsl --update`, concluir o primeiro uso pelo lançador
+e, por último, `wsl --unregister` e reinstalar. O terceiro **pergunta antes**,
+porque apaga o Ubuntu e tudo dentro dele.
+
 **O reinício do Windows.** Instalar o WSL deixa os recursos do Windows
 pendentes, e eles só passam a valer no próximo boot — seguir em frente dali faz
 todo comando para dentro do WSL falhar com *permissão negada*, mesmo rodando
