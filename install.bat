@@ -72,7 +72,7 @@ REM  `where wsl` nao prova nada: o wsl.exe acompanha o Windows mesmo sem o
 REM  WSL instalado, e `wsl --status` pode responder com os recursos ainda
 REM  pendentes de reinicio. Era essa a deteccao daqui, e e por isso que o
 REM  instalador seguia em frente numa maquina que ainda nao podia rodar nada.
-echo  [1/6] Verificando o WSL...
+echo  [1/7] Verificando o WSL...
 
 REM  A deteccao mora em scripts\estado-wsl.ps1 — PowerShell de verdade, em
 REM  arquivo, porque embutido aqui viraria um `for /f` com tres niveis de
@@ -215,9 +215,9 @@ if defined ACHADA (
     REM  com o nome dele. Instalar "Ubuntu" ao lado seria baixar uma segunda
     REM  distribuicao para fazer o que a primeira ja faz.
     set "DISTRO=!ACHADA!"
-    echo  [2/6] Distribuicao !ACHADA! ja instalada — nao vou baixar de novo.
+    echo  [2/7] Distribuicao !ACHADA! ja instalada — nao vou baixar de novo.
 ) else (
-    echo  [2/6] Instalando a distribuicao %DISTRO%...
+    echo  [2/7] Instalando a distribuicao %DISTRO%...
     wsl --install -d %DISTRO% --no-launch
     if !errorLevel! neq 0 (
         echo  X Nao foi possivel instalar o %DISTRO%.
@@ -341,57 +341,14 @@ goto :pedir_reinicio
 :distro_pronta
 echo  ✓ %DISTRO% pronto.
 
-REM ── 3. O usuario do Linux ─────────────────────────────────────────
-REM  POR QUE ISTO EXISTE: a distribuicao e instalada com --no-launch, entao
-REM  nasce SEM usuario nenhum. Quem abrir o aplicativo "Ubuntu" depois cai
-REM  num "Enter new UNIX username" — e todo o guia de operar o appliance manda
-REM  abrir o Ubuntu para rodar `docker compose`. A instalacao terminava e
-REM  deixava a pessoa trancada fora do proprio terminal.
-REM
-REM  O appliance roda como root e nao precisa deste usuario. Ele existe para
-REM  a PESSOA, e e por isso que a senha e gerada aqui e mostrada no fim: quem
-REM  instala nao tem como inventar uma no prompt do Ubuntu nem recuperar
-REM  depois.
-echo  [3/7] Criando o usuario do Ubuntu...
-set "USUARIO_WSL=hormos"
-
-REM  `id` antes de criar: rodar o instalador duas vezes nao pode trocar a
-REM  senha de um usuario que a pessoa ja anotou.
-wsl -d %DISTRO% -u root -- bash -c "id %USUARIO_WSL% >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo %USUARIO_WSL%"
-if %errorLevel% neq 0 (
-    echo  X Nao foi possivel criar o usuario %USUARIO_WSL% no %DISTRO%.
-    pause
-    exit /b 1
-)
-
-REM  /dev/urandom e nao openssl: numa imagem minima o openssl pode nao estar
-REM  la, e descobrir isso em campo custa uma instalacao. Sem / + = na senha,
-REM  que atrapalham quem vai digitar a mao.
-wsl -d %DISTRO% -u root -- bash -c "test -s /root/.senha-ubuntu || { tr -dc A-Za-z0-9 </dev/urandom | head -c 14 > /root/.senha-ubuntu; chmod 600 /root/.senha-ubuntu; }; echo %USUARIO_WSL%:$(cat /root/.senha-ubuntu) | chpasswd"
-if %errorLevel% neq 0 (
-    echo  X Nao foi possivel definir a senha do %USUARIO_WSL%.
-    pause
-    exit /b 1
-)
-
-REM  default no wsl.conf: sem isto, abrir o aplicativo "Ubuntu" entra como
-REM  root, e a pessoa opera tudo como root sem saber que esta.
-wsl -d %DISTRO% -u root -- bash -c "grep -q '^\[user\]' /etc/wsl.conf 2>/dev/null || printf '[user]\ndefault=%USUARIO_WSL%\n' >> /etc/wsl.conf"
-REM  Alem do wsl.conf, o lancador tem o caminho proprio e documentado para
-REM  isto. Os dois juntos porque o wsl.conf e lido no boot da distro e o
-REM  lancador grava no registro do Windows — e qual dos dois vale depende da
-REM  versao do WSL. Fazer os dois custa uma linha.
-if defined LANCADOR %LANCADOR% config --default-user %USUARIO_WSL% >nul 2>&1
-echo  ✓ Usuario %USUARIO_WSL% criado ^(a senha aparece no fim^).
-
-REM ── 4. systemd (necessario para o servico do Docker subir sozinho) ─
-echo  [4/7] Habilitando systemd no WSL...
+REM ── 3. systemd (necessario para o servico do Docker subir sozinho) ─
+echo  [3/7] Habilitando systemd no WSL...
 wsl -d %DISTRO% -u root -- bash -c "grep -q '^systemd=true' /etc/wsl.conf 2>/dev/null || printf '[boot]\nsystemd=true\n' >> /etc/wsl.conf"
 wsl --shutdown
 timeout /t 3 /nobreak >nul
 
-REM ── 5. Docker Engine + Compose DENTRO do WSL ──────────────────────
-echo  [5/7] Verificando o Docker dentro do WSL...
+REM ── 4. Docker Engine + Compose DENTRO do WSL ──────────────────────
+echo  [4/7] Verificando o Docker dentro do WSL...
 wsl -d %DISTRO% -u root -- bash -c "command -v docker >/dev/null 2>&1"
 if %errorLevel% equ 0 (
     echo  ✓ Docker ja instalado no WSL.
@@ -407,16 +364,12 @@ if %errorLevel% equ 0 (
 )
 wsl -d %DISTRO% -u root -- bash -c "systemctl enable --now docker >/dev/null 2>&1 || service docker start >/dev/null 2>&1; true"
 
-REM  Grupo docker so DEPOIS de instalar o Docker, porque e a instalacao dele
-REM  que cria o grupo. Sem isto a pessoa precisa de sudo em todo comando, e o
-REM  guia de operacao nao usa sudo em nenhum.
-wsl -d %DISTRO% -u root -- bash -c "getent group docker >/dev/null || groupadd docker; usermod -aG docker %USUARIO_WSL%"
+REM  O grupo docker do usuario e tratado pelo preparar-usuario-wsl.sh, no
+REM  passo 5 — que vem depois deste de proposito, porque e a instalacao do
+REM  Docker que cria o grupo. Aqui esta linha expandiria %USUARIO_WSL% antes
+REM  de ele existir, e rodaria `usermod -aG docker` sem usuario nenhum.
 
-REM ── 6. Copia o projeto para dentro do WSL e instala ───────────────
-echo  [6/7] Preparando o Hormos dentro do WSL...
-REM  `wslpath "%CD%"` e NAO `wslpath "'%CD%'"`. Com as aspas simples por
-REM  dentro, elas entravam no VALOR: o wslpath recebia o caminho ja entre
-REM  aspas, nao convertia para /mnt/c/... e devolvia literalmente
+
 REM  'C:/Users/.../hormos-main (1)/hormos-main'. A linha montada virava
 REM  cp -r ''C:/...'/.' - aspas vazias, caminho SEM protecao e, quando a
 REM  pasta tinha parenteses, erro de sintaxe no bash.
@@ -426,6 +379,59 @@ REM  vezes recebe "hormos-main (1)" do proprio Windows. O caminho do
 REM  usuario e o que tem espaco e parenteses, nao o do desenvolvedor.
 set "SRC="
 for /f "usebackq delims=" %%i in (`wsl -d %DISTRO% -u root -- wslpath "%CD%"`) do set "SRC=%%i"
+
+REM ── 5. O usuario do Linux ─────────────────────────────────────────
+REM  POR QUE DEPOIS DO DOCKER: o usuario precisa entrar no grupo `docker`, e
+REM  esse grupo so existe depois que o Docker e instalado. Antes este passo
+REM  vinha em terceiro, com o grupo ainda inexistente.
+REM
+REM  POR QUE CHAMA UM SCRIPT, E NAO BASH INLINE: a versao anterior era um
+REM  `wsl -- bash -c "..."` com pipe, redirecionamento, chaves e substituicao
+REM  de comando dentro de aspas do cmd. A logica estava CERTA — testada
+REM  isolada num Ubuntu real — mas a travessia pelo cmd entregou ao bash
+REM  outra coisa: o arquivo da senha nunca foi criado, o chpasswd recebeu
+REM  senha VAZIA e a tela mostrou "pam_chauthtok() failed". Tres camadas de
+REM  aspas e o mesmo erro que eu ja havia evitado no PowerShell.
+REM
+REM  O script tem alternativa em CADA passo (chpasswd, depois passwd, depois
+REM  hash + usermod; urandom, depois openssl, depois sha256), porque quem
+REM  instala nao tem como consertar nada a mao. Os seis caminhos foram
+REM  testados em Ubuntu 24.04 autenticando de verdade, nao so "sem erro".
+echo  [5/7] Criando o usuario do Ubuntu...
+set "USUARIO_WSL=hormos"
+set "SENHA_WSL="
+
+REM  A ULTIMA linha da saida e a senha; o relato vai para stderr, de proposito,
+REM  para a captura aqui nao precisar de filtro nenhum.
+for /f "usebackq delims=" %%P in (`wsl -d %DISTRO% -u root -- bash "%SRC%/scripts/preparar-usuario-wsl.sh" %USUARIO_WSL%`) do set "SENHA_WSL=%%P"
+
+if not defined SENHA_WSL (
+    echo.
+    echo  X Nao foi possivel preparar o usuario %USUARIO_WSL% no %DISTRO%.
+    echo    O motivo esta nas linhas acima.
+    echo.
+    echo    A instalacao do Hormos pode seguir sem ele, mas voce nao vai
+    echo    conseguir abrir o aplicativo "Ubuntu" para operar o appliance.
+    echo    Para criar um a mao depois, no PowerShell:
+    echo      wsl -d %DISTRO% -u root
+    echo      adduser seu_nome
+    echo      usermod -aG sudo,docker seu_nome
+    echo.
+    set "RESP="
+    set /p "RESP=  Continuar a instalacao mesmo assim? [S/n]: "
+    if /i "!RESP!"=="n" (
+        pause
+        exit /b 1
+    )
+) else (
+    echo  ✓ Usuario %USUARIO_WSL% pronto ^(a senha aparece no fim^).
+)
+
+REM ── 6. Copia o projeto para dentro do WSL e instala ───────────────
+echo  [6/7] Preparando o Hormos dentro do WSL...
+REM  `wslpath "%CD%"` e NAO `wslpath "'%CD%'"`. Com as aspas simples por
+REM  dentro, elas entravam no VALOR: o wslpath recebia o caminho ja entre
+REM  aspas, nao convertia para /mnt/c/... e devolvia literalmente
 if not defined SRC (
     echo  X Nao foi possivel converter o caminho desta pasta para o WSL.
     echo    Pasta: %CD%
@@ -500,8 +506,13 @@ echo.
 REM ── A credencial do Ubuntu ────────────────────────────────────────
 REM  Mostrada aqui porque sem ela a pessoa nao abre o proprio terminal, e
 REM  todo o bloco "como parar e ligar" logo abaixo manda abrir o Ubuntu.
-set "SENHA_WSL="
-for /f "usebackq delims=" %%P in (`wsl -d %DISTRO% -u root -- cat /root/.senha-ubuntu 2^>nul`) do set "SENHA_WSL=%%P"
+REM  NAO zera o SENHA_WSL aqui: ele ja veio do passo 5, que e a fonte
+REM  autoritativa. Zerar e reler jogava fora o valor que temos em maos, e se
+REM  a releitura falhasse a credencial nao apareceria mesmo estando conhecida.
+REM  A releitura e so para o caso de o passo 5 ter sido pulado.
+if not defined SENHA_WSL (
+    for /f "usebackq delims=" %%P in (`wsl -d %DISTRO% -u root -- cat /root/.senha-ubuntu 2^>nul`) do set "SENHA_WSL=%%P"
+)
 if defined SENHA_WSL (
     echo  ───────────────────────────────────────────────────────────────
     echo   USUARIO E SENHA DO UBUNTU ^(ANOTE^)
