@@ -754,9 +754,18 @@ O WSL encaminha `localhost` sozinho: o navegador do Windows abre
 **Caminho A — automático.** Clique com o botão direito em `install.bat` →
 **Executar como administrador**. Ele instala o WSL2, o Docker Engine dentro
 dele, roda a instalação e confia na CA no repositório do Windows (Chrome, Edge
-e Firefox). Se o WSL ainda não existia, ele pede para **reiniciar o Windows** e
-continuar rodando o mesmo arquivo — o progresso não se perde. A instalação fica
-em **`/opt/hormos`**, dentro do WSL.
+e Firefox). A instalação fica em **`/opt/hormos`**, dentro do WSL.
+
+**O reinício do Windows.** Instalar o WSL deixa os recursos do Windows
+pendentes, e eles só passam a valer no próximo boot — seguir em frente dali faz
+todo comando para dentro do WSL falhar com *permissão negada*, mesmo rodando
+como administrador. O instalador para nesse ponto e pergunta: **reiniciar
+agora**, e ele agenda a própria continuação para recomeçar sozinho ao voltar
+(agendamento temporário, apagado quando o Hormos está no ar); ou **depois**,
+e você reinicia e roda o `install.bat` de novo. Rodar de novo é seguro: ele
+reconhece o WSL e a distribuição já instalados e **não baixa o Ubuntu outra
+vez** — inclusive se o que existe é um `Ubuntu-24.04`, que ele adota em vez de
+instalar um segundo Ubuntu ao lado.
 
 **Caminho B — manual**, para quando a política da máquina não permite executar
 um `.bat` como administrador. No **PowerShell como administrador**:

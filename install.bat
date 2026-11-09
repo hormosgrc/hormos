@@ -21,7 +21,12 @@ net session >nul 2>&1
 if %errorLevel% neq 0 (
     echo.
     echo  Solicitando privilegios de administrador...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    REM  Pela variavel de ambiente, e nao por "-FilePath '%~f0'". Entre aspas
+    REM  simples, um apostrofo no caminho fecha a string antes da hora — e
+    REM  C:\Users\O'Brien\... e um caminho perfeitamente comum. Em $env: o
+    REM  valor e uma string e nao passa por parsing nenhum.
+    set "EU=%~f0"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath $env:EU -Verb RunAs"
     exit /b
 )
 
@@ -31,58 +36,181 @@ echo    Hormos — Instalador (Windows / WSL2)
 echo  ═══════════════════════════════════════════════
 echo.
 
-REM ── 1. WSL2 presente? ─────────────────────────────────────────────
-where wsl >nul 2>&1
-if %errorLevel% neq 0 goto :instalar_wsl
+REM ── Retomada automatica apos o reinicio ───────────────────────────
+REM  O Windows EXIGE reinicio depois de instalar o WSL, e isso nao se
+REM  contorna: os recursos ficam em "EnablePending" e so passam a valer no
+REM  proximo boot. Seguir dali da erro de PERMISSAO em tudo o que vem
+REM  depois — foi o que aconteceu numa instalacao real, e a mensagem de erro
+REM  nao diz a causa.
+REM
+REM  A tarefa e apagada JA NO COMECO desta execucao, nao so no fim: se a
+REM  instalacao falhar depois do reinicio, ela nao fica voltando a cada
+REM  logon para sempre. Uma tentativa por agendamento — o que o "RunOnce"
+REM  do Windows faz — mas como tarefa agendada com RunLevel Highest, para
+REM  voltar JA elevada e nao parar num UAC com a pessoa longe do teclado.
+set "DETECTA=%~dp0scripts\estado-wsl.ps1"
+set "RETOMA=%~dp0scripts\retomar-instalacao.ps1"
+for %%F in ("%DETECTA%" "%RETOMA%") do (
+    if not exist "%%~F" (
+        echo  X Arquivo ausente: %%~nxF
+        echo    A pasta foi descompactada por completo?
+        pause
+        exit /b 1
+    )
+)
 
-wsl --status >nul 2>&1
-if %errorLevel% neq 0 goto :instalar_wsl
-echo  [1/6] WSL detectado.
-goto :checar_distro
+powershell -NoProfile -ExecutionPolicy Bypass -File "%RETOMA%" -Acao consumir
+if %errorLevel% equ 10 (
+    echo  Retomando a instalacao apos o reinicio...
+    echo.
+)
 
-:instalar_wsl
-echo  [1/6] WSL nao encontrado — instalando (requer reinicializacao)...
-echo.
-wsl --install --no-launch
+REM ── 1. O WSL esta instalado E ATIVO? ──────────────────────────────
+REM  `where wsl` nao prova nada: o wsl.exe acompanha o Windows mesmo sem o
+REM  WSL instalado, e `wsl --status` pode responder com os recursos ainda
+REM  pendentes de reinicio. Era essa a deteccao daqui, e e por isso que o
+REM  instalador seguia em frente numa maquina que ainda nao podia rodar nada.
+echo  [1/6] Verificando o WSL...
+
+REM  A deteccao mora em scripts\estado-wsl.ps1 — PowerShell de verdade, em
+REM  arquivo, porque embutido aqui viraria um `for /f` com tres niveis de
+REM  escape de aspas que ninguem revisa. Sem ele nao da para distinguir
+REM  "falta reiniciar" de "nao esta instalado", entao ausencia e erro.
+
+REM  O codigo de saida e lido para uma variavel ANTES de qualquer outra
+REM  coisa: `set` bem-sucedido zera o %%errorLevel%%, e um segundo `if`
+REM  comparando %%errorLevel%% depois do primeiro ja testaria outro valor.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%DETECTA%" -Checar plataforma
+set "ESTADO_WSL=%errorLevel%"
+
+if "%ESTADO_WSL%"=="0" (
+    echo  ✓ WSL instalado e ativo.
+    goto :checar_distro
+)
+if "%ESTADO_WSL%"=="1" (
+    echo  ! O WSL ja foi instalado, mas so passa a valer depois de reiniciar.
+    goto :pedir_reinicio
+)
+
+echo       WSL nao encontrado — instalando...
+REM  --no-distribution instala SO a plataforma. A distribuicao fica para o
+REM  passo 2, depois do reinicio: instala-la agora exigiria o WSL ja ativo,
+REM  e ele ainda nao esta.
+wsl --install --no-distribution
 if %errorLevel% neq 0 (
     echo.
-    echo  ✖ Falha ao instalar o WSL.
+    echo  X Falha ao instalar o WSL.
     echo.
     echo    Causa mais comum: virtualizacao desabilitada na BIOS/UEFI.
     echo    Habilite "Intel VT-x" ou "AMD-V" e rode este instalador de novo.
     echo.
-    pause & exit /b 1
+    pause
+    exit /b 1
+)
+echo  ✓ WSL instalado.
+goto :pedir_reinicio
+
+:pedir_reinicio
+echo.
+echo  ═══════════════════════════════════════════════
+echo   O Windows precisa REINICIAR para concluir
+echo.
+echo   Posso agendar a continuacao: a maquina reinicia
+echo   e a instalacao recomeca de onde parou, sozinha,
+echo   sem voce precisar fazer nada.
+echo  ═══════════════════════════════════════════════
+echo.
+set "RESP="
+set /p "RESP=  Reiniciar agora e continuar automaticamente? [S/n]: "
+if /i "%RESP%"=="n" goto :reinicio_manual
+
+REM  Agendar pelo script, e nao por `schtasks /tr "\"%~f0\""`: o cmd nao
+REM  processa \" como escape, e o caminho mais comum do usuario e o pior caso
+REM  possivel — quem baixa o zip duas vezes recebe "hormos-main (1)" do
+REM  proprio Windows, com espaco E parenteses.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%RETOMA%" -Acao agendar -Script "%~f0"
+if %errorLevel% neq 0 (
+    echo  ! Nao consegui agendar a continuacao automatica.
+    goto :reinicio_manual
 )
 echo.
-echo  ✓ WSL instalado.
+echo  ✓ Continuacao agendada.
+echo.
+REM  O `shutdown` e emitido DEPOIS desta tecla, nao antes. Antes, a
+REM  mensagem dizia "feche esta janela e rode shutdown /a" para cancelar —
+REM  mas fechando a janela nao sobra onde rodar o comando. Assim, fechar a
+REM  janela agora simplesmente nao reinicia nada, e o agendamento fica de
+REM  pe: reiniciando a mao mais tarde, a instalacao continua igual.
+echo    Pressione qualquer tecla para REINICIAR agora.
+echo    Ou feche esta janela: nada reinicia, e a instalacao continua
+echo    sozinha no proximo reinicio que voce fizer.
+pause >nul
+shutdown /r /t 5 /c "Hormos: reinicio para concluir a instalacao do WSL"
+exit /b 0
+
+:reinicio_manual
 echo.
 echo  ═══════════════════════════════════════════════
 echo   REINICIE O WINDOWS e execute este instalador
-echo   novamente para concluir. O progresso ate aqui
-echo   ja esta salvo.
+echo   novamente. O progresso ate aqui esta salvo —
+echo   ele nao reinstala o que ja existe.
 echo  ═══════════════════════════════════════════════
 echo.
-pause & exit /b 0
+pause
+exit /b 0
 
 :checar_distro
 wsl --set-default-version 2 >nul 2>&1
 
 REM ── 2. Distribuicao Ubuntu ────────────────────────────────────────
-set DISTRO=Ubuntu
-wsl -d %DISTRO% -- true >nul 2>&1
-if %errorLevel% equ 0 (
-    echo  [2/6] Distribuicao %DISTRO% ja instalada.
+REM  Aqui ha DOIS estados que nao se confundem, e tratar os dois como um
+REM  so foi o defeito que apareceu em campo:
+REM
+REM    REGISTRADA — o `wsl --install -d` ja rodou e a distro aparece em
+REM                 `wsl -l -q`, mas o sistema de arquivos ainda nao foi
+REM                 extraido. Baixar de novo joga fora o download.
+REM    PRONTA     — executa comando como root e responde.
+REM
+REM  Antes, um unico `wsl -d Ubuntu -- true` respondia "nao existe" para
+REM  uma distro que EXISTIA e so faltava inicializar — e o instalador
+REM  baixava o Ubuntu inteiro outra vez. Agora pergunta-se primeiro se
+REM  esta registrada (barato, nao inicializa nada) e so depois se roda.
+set "DISTRO=Ubuntu"
+set "ACHADA="
+for /f "usebackq delims=" %%R in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%DETECTA%" -Checar distro -Nome Ubuntu`) do set "ACHADA=%%R"
+
+if defined ACHADA (
+    REM  Volta o nome REAL: quem tem "Ubuntu-24.04" tem Ubuntu, e seguimos
+    REM  com o nome dele. Instalar "Ubuntu" ao lado seria baixar uma segunda
+    REM  distribuicao para fazer o que a primeira ja faz.
+    set "DISTRO=!ACHADA!"
+    echo  [2/6] Distribuicao !ACHADA! ja instalada — nao vou baixar de novo.
 ) else (
     echo  [2/6] Instalando a distribuicao %DISTRO%...
     wsl --install -d %DISTRO% --no-launch
     if !errorLevel! neq 0 (
-        echo  ✖ Nao foi possivel instalar o %DISTRO%.
-        pause & exit /b 1
+        echo  X Nao foi possivel instalar o %DISTRO%.
+        pause
+        exit /b 1
     )
-    REM primeira inicializacao cria o sistema de arquivos
-    wsl -d %DISTRO% -u root -- true >nul 2>&1
-    echo  ✓ %DISTRO% instalado.
+    echo  ✓ %DISTRO% baixado.
 )
+
+REM  Primeira inicializacao: extrai o sistema de arquivos. Pode levar um
+REM  minuto e parecer travado, entao se anuncia.
+echo       Inicializando o %DISTRO%...
+wsl -d %DISTRO% -u root -- true >nul 2>&1
+if %errorLevel% neq 0 (
+    REM  ESTE e o ponto exato onde a instalacao real falhou: o Ubuntu
+    REM  acabara de ser instalado, o script seguiu adiante, e todo o resto
+    REM  deu "permissao negada" sem dizer que a causa era reinicio pendente.
+    REM  Agora para aqui, explica, e oferece retomar sozinho.
+    echo.
+    echo  ! O %DISTRO% esta instalado mas ainda nao consegue executar.
+    echo    Isso quase sempre e reinicio pendente do Windows.
+    goto :pedir_reinicio
+)
+echo  ✓ %DISTRO% pronto.
 
 REM ── 3. systemd (necessario para o servico do Docker subir sozinho) ─
 echo  [3/6] Habilitando systemd no WSL...
@@ -100,7 +228,8 @@ if %errorLevel% equ 0 (
     wsl -d %DISTRO% -u root -- bash -c "curl -fsSL https://get.docker.com | sh"
     if !errorLevel! neq 0 (
         echo  ✖ Falha ao instalar o Docker no WSL. Verifique a conexao com a internet.
-        pause & exit /b 1
+        pause
+        exit /b 1
     )
     echo  ✓ Docker Engine instalado.
 )
@@ -123,7 +252,8 @@ for /f "usebackq delims=" %%i in (`wsl -d %DISTRO% -u root -- wslpath "%CD%"`) d
 if not defined SRC (
     echo  X Nao foi possivel converter o caminho desta pasta para o WSL.
     echo    Pasta: %CD%
-    pause ^& exit /b 1
+    pause
+    exit /b 1
 )
 
 REM  Sem `2^>/dev/null` e sem `; true` na copia: engolir o erro aqui fazia a
@@ -134,14 +264,16 @@ if %errorLevel% neq 0 (
     echo  X Falha ao copiar os arquivos para dentro do WSL.
     echo    Origem: %CD%
     echo    Confira se a pasta foi descompactada por completo.
-    pause ^& exit /b 1
+    pause
+    exit /b 1
 )
 wsl -d %DISTRO% -u root -- bash -c "cd /opt/hormos && chmod +x install.sh scripts/*.sh 2>/dev/null; true"
 echo       Executando a instalacao (pode demorar na primeira vez)...
 wsl -d %DISTRO% -u root -- bash -c "cd /opt/hormos && ./install.sh local"
 if %errorLevel% neq 0 (
     echo  ✖ A instalacao dentro do WSL falhou. Veja as mensagens acima.
-    pause & exit /b 1
+    pause
+    exit /b 1
 )
 
 REM ── 6. Confiar na CA interna (Windows + Firefox) ──────────────────
@@ -169,6 +301,15 @@ if exist "%CD%\caddy\Hormos-CA-local.crt" (
 )
 
 echo.
+REM ── O agendamento temporario nao sobrevive ao sucesso ────────────
+REM  Ele ja saiu no inicio desta execucao, de proposito, para nao voltar a
+REM  cada logon se a instalacao falhasse no meio. Apagar de novo aqui e
+REM  barato e fecha a promessa feita a quem aceitou reiniciar: o agendamento
+REM  sai quando o Hormos esta NO AR — e chegar nesta linha significa isso,
+REM  porque o install.sh roda o conferir-saude.sh e o passo 5 aborta se ele
+REM  falhar.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%RETOMA%" -Acao remover
+
 echo  ═══════════════════════════════════════════════
 echo    ✓ Hormos instalado
 echo.
@@ -212,8 +353,16 @@ echo     Cole no PowerShell ^(nao no Ubuntu^):
 echo.
 echo       wsl -d %DISTRO% -u root grep MASTER_PASSWORD /opt/hormos/.env
 echo.
-echo   Ela vale para UM acesso. Depois do primeiro login a senha passa
-echo   a ser a sua, e a recuperacao e pela propria tela de login.
+echo   Ela vale para UM acesso. Depois do primeiro login a senha
+echo   passa a ser a sua.
+echo.
+REM  NAO existe "Esqueci minha senha" na tela de login. Dizer que existia
+REM  mandava a pessoa procurar um botao que nao esta la — o mesmo texto
+REM  errado ja foi tirado do install.sh. Quem redefine e o script, dentro
+REM  do Ubuntu.
+echo   Perdeu a senha depois disso? No aplicativo "Ubuntu":
+echo.
+echo     cd /opt/hormos ^&^& sudo ./scripts/redefinir-senha-admin.sh
 echo.
 echo   ONDE RODAR CADA COMANDO
 echo     - comeca com "wsl"            -^> PowerShell do Windows

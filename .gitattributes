@@ -17,6 +17,13 @@
 # o próximo commit feito num Mac ou Linux o devolveria para LF.
 *.bat text eol=crlf
 
+# O .ps1 segue o .bat pelo mesmo motivo: e arquivo de Windows e o "Download
+# ZIP" entrega os bytes como estao no repositorio. Vai com BOM de UTF-8 de
+# proposito — o PowerShell 5.1, que e o powershell.exe que o Windows traz,
+# le .ps1 SEM BOM como ANSI, e todo acento e travessao dos comentarios vira
+# lixo. O `text` do git nao mexe em BOM, so em final de linha.
+*.ps1 text eol=crlf
+
 # O resto do mundo é LF, inclusive o que roda DENTRO do contêiner. Um .sh com
 # CRLF quebra com "bad interpreter: /bin/bash^M", que é o defeito espelhado
 # deste e igualmente obscuro.
