@@ -47,6 +47,13 @@ echo "═══ A · estrutura do install.bat ═══"
 lf_solto=$(python3 -c "d=open('$BAT','rb').read(); print(d.count(b'\n')-d.count(b'\r\n'))")
 checar "todas as linhas terminam em CRLF" "$lf_solto" "0"
 
+# \r\r\n passa pela checagem acima: a diferença entre \n e \r\n é zero nos
+# dois casos. Já aconteceu — uma gravação com newline='\r\n' sobre um texto
+# que já tinha CRLF dobrou o CR em todas as 406 linhas, e a suíte ficou verde.
+# Tem de procurar a sequência, não contar.
+crcrlf=$(python3 -c "print(open('$BAT','rb').read().count(b'\r\r\n'))")
+checar "nenhum CR duplicado (\\r\\r\\n)" "$crcrlf" "0"
+
 # `pause ^& exit /b 1` dentro de um bloco ( ... ): o caret torna o & LITERAL,
 # o pause recebe "& exit /b 1" como argumento e ignora, e o exit NUNCA roda.
 # O instalador imprime "falha" e continua instalando sobre o erro.
@@ -143,6 +150,32 @@ STUBEOF
   chmod +x "$STUB/wsl.exe"
   export PATH="$STUB:$PATH"
 
+  echo "═══ B2 · nenhuma variável local sobrescreve um parâmetro ═══"
+  # ISTO QUEBROU UMA INSTALAÇÃO REAL. `$acao = New-ScheduledTaskAction ...`
+  # sobrescrevia o PARÂMETRO `$Acao`, porque no PowerShell nome de variável
+  # não diferencia maiúscula de minúscula. O ValidateSet do parâmetro roda na
+  # atribuição e rejeitava: "o valor MSFT_TaskExecAction não é válido para a
+  # variável Acao".
+  #
+  # E a suíte tinha passado: aqui o cmdlet não existe, então estourava ANTES
+  # da atribuição e o teste nunca tocou a linha com o defeito. Esta checagem é
+  # estática de propósito — não depende de rodar no Windows.
+  col=$(pwsh -NoProfile -Command '
+    $saida = @()
+    foreach ($f in "'"$PS_ESTADO"'","'"$PS_RETOMA"'") {
+      $ast = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$null, [ref]$null)
+      $par = @($ast.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })
+      $atr = @($ast.FindAll({ $args[0] -is [System.Management.Automation.Language.AssignmentStatementAst] }, $true) |
+               ForEach-Object { $_.Left } |
+               Where-Object { $_ -is [System.Management.Automation.Language.VariableExpressionAst] } |
+               ForEach-Object { $_.VariablePath.UserPath }) | Sort-Object -Unique
+      foreach ($a in $atr) { if ($par | Where-Object { $_ -ieq $a }) { $saida += "$f atribui a `$$a" } }
+    }
+    $saida -join "; "')
+  if [ -z "$col" ]; then ok "nenhum parâmetro é sobrescrito por variável local"
+  else falha "parâmetro sobrescrito — $col"; fi
+
+  echo
   echo "═══ C · tabela de decisão da plataforma ═══"
   E=VirtualMachinePlatform; W=Microsoft-Windows-Subsystem-Linux
   caso() { # caso <descrição> <recursos> <wsl.exe responde> <código esperado>

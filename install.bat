@@ -60,7 +60,9 @@ for %%F in ("%DETECTA%" "%RETOMA%") do (
 )
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%RETOMA%" -Acao consumir
+set "RETOMADA=0"
 if %errorLevel% equ 10 (
+    set "RETOMADA=1"
     echo  Retomando a instalacao apos o reinicio...
     echo.
 )
@@ -111,6 +113,34 @@ echo  ✓ WSL instalado.
 goto :pedir_reinicio
 
 :pedir_reinicio
+echo.
+REM  Dizer "precisa reiniciar" sem dizer POR QUE e inutil para quem acabou
+REM  de reiniciar — e esse caso aconteceu numa instalacao real. O estado cru
+REM  vai para a tela sempre, antes da pergunta.
+echo  ── estado desta maquina ───────────────────────
+powershell -NoProfile -ExecutionPolicy Bypass -File "%DETECTA%" -Checar diagnostico
+echo  ───────────────────────────────────────────────
+
+REM  Se ESTA execucao ja e a retomada de um reinicio, pedir outro seria um
+REM  laco: reinicia, volta, pede de novo, para sempre. Quando reiniciar nao
+REM  resolve, a resposta honesta e parar e mostrar o estado, nao insistir.
+if "%RETOMADA%"=="1" (
+    echo.
+    echo  ═══════════════════════════════════════════════
+    echo   REINICIAR NAO RESOLVEU
+    echo.
+    echo   Esta execucao JA e a retomada de um reinicio, e o
+    echo   WSL continua sem conseguir rodar. Pedir outro
+    echo   reinicio nao vai mudar nada.
+    echo.
+    echo   Mande o quadro de estado acima para o suporte:
+    echo   https://hormosgrc.github.io/instalacao.html
+    echo  ═══════════════════════════════════════════════
+    echo.
+    pause
+    exit /b 1
+)
+
 echo.
 echo  ═══════════════════════════════════════════════
 echo   O Windows precisa REINICIAR para concluir
@@ -199,27 +229,78 @@ if defined ACHADA (
 REM  Primeira inicializacao: extrai o sistema de arquivos. Pode levar um
 REM  minuto e parecer travado, entao se anuncia.
 echo       Inicializando o %DISTRO%...
-wsl -d %DISTRO% -u root -- true >nul 2>&1
+REM  A saida NAO vai para nul: quando isso falha, a mensagem do wsl.exe e a
+REM  unica pista do motivo. Manda-la para nul foi o que me obrigou a adivinhar
+REM  a causa — e eu adivinhei errado, culpei reinicio pendente numa maquina
+REM  cujo VirtualMachinePlatform estava Enabled.
+wsl -d %DISTRO% -u root -- true
+if %errorLevel% neq 0 (
+    REM  Segunda tentativa depois de derrubar o WSL: resolve o caso em que a
+    REM  distro ficou com estado sujo de uma instalacao interrompida.
+    echo       Primeira tentativa falhou; derrubando o WSL e tentando de novo...
+    wsl --shutdown
+    timeout /t 3 /nobreak >nul
+    wsl -d %DISTRO% -u root -- true
+)
 if %errorLevel% neq 0 (
     REM  ESTE e o ponto exato onde a instalacao real falhou: o Ubuntu
     REM  acabara de ser instalado, o script seguiu adiante, e todo o resto
     REM  deu "permissao negada" sem dizer que a causa era reinicio pendente.
     REM  Agora para aqui, explica, e oferece retomar sozinho.
     echo.
-    echo  ! O %DISTRO% esta instalado mas ainda nao consegue executar.
-    echo    Isso quase sempre e reinicio pendente do Windows.
+    echo  ! O %DISTRO% esta registrado mas nao consegue executar.
+    echo    Duas causas possiveis: reinicio pendente do Windows, ou primeiro
+    echo    uso da distribuicao nao concluido. O quadro abaixo diz qual e.
     goto :pedir_reinicio
 )
 echo  ✓ %DISTRO% pronto.
 
-REM ── 3. systemd (necessario para o servico do Docker subir sozinho) ─
-echo  [3/6] Habilitando systemd no WSL...
+REM ── 3. O usuario do Linux ─────────────────────────────────────────
+REM  POR QUE ISTO EXISTE: a distribuicao e instalada com --no-launch, entao
+REM  nasce SEM usuario nenhum. Quem abrir o aplicativo "Ubuntu" depois cai
+REM  num "Enter new UNIX username" — e todo o guia de operar o appliance manda
+REM  abrir o Ubuntu para rodar `docker compose`. A instalacao terminava e
+REM  deixava a pessoa trancada fora do proprio terminal.
+REM
+REM  O appliance roda como root e nao precisa deste usuario. Ele existe para
+REM  a PESSOA, e e por isso que a senha e gerada aqui e mostrada no fim: quem
+REM  instala nao tem como inventar uma no prompt do Ubuntu nem recuperar
+REM  depois.
+echo  [3/7] Criando o usuario do Ubuntu...
+set "USUARIO_WSL=hormos"
+
+REM  `id` antes de criar: rodar o instalador duas vezes nao pode trocar a
+REM  senha de um usuario que a pessoa ja anotou.
+wsl -d %DISTRO% -u root -- bash -c "id %USUARIO_WSL% >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo %USUARIO_WSL%"
+if %errorLevel% neq 0 (
+    echo  X Nao foi possivel criar o usuario %USUARIO_WSL% no %DISTRO%.
+    pause
+    exit /b 1
+)
+
+REM  /dev/urandom e nao openssl: numa imagem minima o openssl pode nao estar
+REM  la, e descobrir isso em campo custa uma instalacao. Sem / + = na senha,
+REM  que atrapalham quem vai digitar a mao.
+wsl -d %DISTRO% -u root -- bash -c "test -s /root/.senha-ubuntu || { tr -dc A-Za-z0-9 </dev/urandom | head -c 14 > /root/.senha-ubuntu; chmod 600 /root/.senha-ubuntu; }; echo %USUARIO_WSL%:$(cat /root/.senha-ubuntu) | chpasswd"
+if %errorLevel% neq 0 (
+    echo  X Nao foi possivel definir a senha do %USUARIO_WSL%.
+    pause
+    exit /b 1
+)
+
+REM  default no wsl.conf: sem isto, abrir o aplicativo "Ubuntu" entra como
+REM  root, e a pessoa opera tudo como root sem saber que esta.
+wsl -d %DISTRO% -u root -- bash -c "grep -q '^\[user\]' /etc/wsl.conf 2>/dev/null || printf '[user]\ndefault=%USUARIO_WSL%\n' >> /etc/wsl.conf"
+echo  ✓ Usuario %USUARIO_WSL% criado ^(a senha aparece no fim^).
+
+REM ── 4. systemd (necessario para o servico do Docker subir sozinho) ─
+echo  [4/7] Habilitando systemd no WSL...
 wsl -d %DISTRO% -u root -- bash -c "grep -q '^systemd=true' /etc/wsl.conf 2>/dev/null || printf '[boot]\nsystemd=true\n' >> /etc/wsl.conf"
 wsl --shutdown
 timeout /t 3 /nobreak >nul
 
-REM ── 4. Docker Engine + Compose DENTRO do WSL ──────────────────────
-echo  [4/6] Verificando o Docker dentro do WSL...
+REM ── 5. Docker Engine + Compose DENTRO do WSL ──────────────────────
+echo  [5/7] Verificando o Docker dentro do WSL...
 wsl -d %DISTRO% -u root -- bash -c "command -v docker >/dev/null 2>&1"
 if %errorLevel% equ 0 (
     echo  ✓ Docker ja instalado no WSL.
@@ -235,8 +316,13 @@ if %errorLevel% equ 0 (
 )
 wsl -d %DISTRO% -u root -- bash -c "systemctl enable --now docker >/dev/null 2>&1 || service docker start >/dev/null 2>&1; true"
 
-REM ── 5. Copia o projeto para dentro do WSL e instala ───────────────
-echo  [5/6] Preparando o Hormos dentro do WSL...
+REM  Grupo docker so DEPOIS de instalar o Docker, porque e a instalacao dele
+REM  que cria o grupo. Sem isto a pessoa precisa de sudo em todo comando, e o
+REM  guia de operacao nao usa sudo em nenhum.
+wsl -d %DISTRO% -u root -- bash -c "getent group docker >/dev/null || groupadd docker; usermod -aG docker %USUARIO_WSL%"
+
+REM ── 6. Copia o projeto para dentro do WSL e instala ───────────────
+echo  [6/7] Preparando o Hormos dentro do WSL...
 REM  `wslpath "%CD%"` e NAO `wslpath "'%CD%'"`. Com as aspas simples por
 REM  dentro, elas entravam no VALOR: o wslpath recebia o caminho ja entre
 REM  aspas, nao convertia para /mnt/c/... e devolvia literalmente
@@ -276,8 +362,8 @@ if %errorLevel% neq 0 (
     exit /b 1
 )
 
-REM ── 6. Confiar na CA interna (Windows + Firefox) ──────────────────
-echo  [6/6] Instalando o certificado da CA interna...
+REM ── 7. Confiar na CA interna (Windows + Firefox) ──────────────────
+echo  [7/7] Instalando o certificado da CA interna...
 wsl -d %DISTRO% -u root -- bash -c "cd /opt/hormos && docker exec sgsi_caddy sh -c 'cat /data/caddy/pki/authorities/local/root.crt' > /opt/hormos/caddy/Hormos-CA-local.crt 2>/dev/null; true"
 wsl -d %DISTRO% -u root -- bash -c "cp /opt/hormos/caddy/Hormos-CA-local.crt '%SRC%/caddy/Hormos-CA-local.crt' 2>/dev/null; true"
 if exist "%CD%\caddy\Hormos-CA-local.crt" (
@@ -319,6 +405,27 @@ echo    Feche o navegador POR COMPLETO antes de abrir,
 echo    para que ele releia os certificados.
 echo  ═══════════════════════════════════════════════
 echo.
+
+REM ── A credencial do Ubuntu ────────────────────────────────────────
+REM  Mostrada aqui porque sem ela a pessoa nao abre o proprio terminal, e
+REM  todo o bloco "como parar e ligar" logo abaixo manda abrir o Ubuntu.
+set "SENHA_WSL="
+for /f "usebackq delims=" %%P in (`wsl -d %DISTRO% -u root -- cat /root/.senha-ubuntu 2^>nul`) do set "SENHA_WSL=%%P"
+if defined SENHA_WSL (
+    echo  ───────────────────────────────────────────────────────────────
+    echo   USUARIO E SENHA DO UBUNTU ^(ANOTE^)
+    echo.
+    echo     usuario:  %USUARIO_WSL%
+    echo     senha:    !SENHA_WSL!
+    echo.
+    echo   Sao do Linux dentro do WSL, nao do Hormos. Servem para abrir o
+    echo   aplicativo "Ubuntu" e rodar os comandos abaixo.
+    echo.
+    echo   Esqueceu? No PowerShell:
+    echo     wsl -d %DISTRO% -u root cat /root/.senha-ubuntu
+    echo  ───────────────────────────────────────────────────────────────
+    echo.
+)
 
 REM ── Como operar depois ────────────────────────────────────────────
 REM  Quem instala por aqui pode nunca ter usado Docker — e no Windows

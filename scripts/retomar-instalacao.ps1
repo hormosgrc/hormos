@@ -68,18 +68,23 @@ try {
     # ONLOGON e nao ONSTART: a instalacao conversa com o WSL, que e por
     # usuario, nao um servico de maquina. RunLevel Highest volta ja elevado,
     # para nao parar num UAC com a pessoa longe do teclado.
-    $acao     = New-ScheduledTaskAction -Execute $completo -WorkingDirectory (Split-Path -LiteralPath $completo)
-    $gatilho  = New-ScheduledTaskTrigger -AtLogOn
-    $conta    = New-ScheduledTaskPrincipal -UserId ([Security.Principal.WindowsIdentity]::GetCurrent().Name) `
-                                           -LogonType Interactive -RunLevel Highest
+    # ATENCAO ao nome: $acao sobrescreveria o PARAMETRO $Acao, porque no
+    # PowerShell variavel nao diferencia maiuscula de minuscula. O ValidateSet
+    # do parametro roda na atribuicao e rejeita com "o valor
+    # MSFT_TaskExecAction nao e valido para a variavel Acao" — foi esse o erro
+    # na instalacao real. O prefixo nao e estilo, e o conserto.
+    $tarefaAcao    = New-ScheduledTaskAction -Execute $completo -WorkingDirectory (Split-Path -LiteralPath $completo)
+    $tarefaGatilho = New-ScheduledTaskTrigger -AtLogOn
+    $tarefaConta   = New-ScheduledTaskPrincipal -UserId ([Security.Principal.WindowsIdentity]::GetCurrent().Name) `
+                                                -LogonType Interactive -RunLevel Highest
     # ExecutionTimeLimit zero = sem limite: a instalacao baixa imagens e pode
     # passar do teto padrao de 72h em rede ruim, e ser morta no meio seria
     # pior que demorar.
-    $config   = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
-                                             -ExecutionTimeLimit ([TimeSpan]::Zero) -StartWhenAvailable
+    $tarefaConfig  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
+                                                  -ExecutionTimeLimit ([TimeSpan]::Zero) -StartWhenAvailable
 
-    Register-ScheduledTask -TaskName $Nome -Action $acao -Trigger $gatilho `
-                           -Principal $conta -Settings $config -Force | Out-Null
+    Register-ScheduledTask -TaskName $Nome -Action $tarefaAcao -Trigger $tarefaGatilho `
+                           -Principal $tarefaConta -Settings $tarefaConfig -Force | Out-Null
     exit 0
 }
 catch {

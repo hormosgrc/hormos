@@ -23,15 +23,19 @@
   Saidas de `-Checar distro`:
      0  registrada — e imprime o NOME real dela na saida padrao
      1  nao registrada
+
+  `-Checar diagnostico` nao decide nada: IMPRIME o estado cru de tudo o que a
+  decisao leva em conta. Existe porque "O Windows precisa REINICIAR" sem dizer
+  o porque e inutil para quem acabou de reiniciar — e esse caso aconteceu.
 #>
 param(
-    [ValidateSet('plataforma','distro')] [string] $Checar = 'plataforma',
+    [ValidateSet('plataforma','distro','diagnostico')] [string] $Checar = 'plataforma',
     [string] $Nome = 'Ubuntu'
 )
 
 $ErrorActionPreference = 'SilentlyContinue'
 
-function Estado-Do-Recurso($nome) {
+function Estado-Do-Recurso($recurso) {
     # Gancho de TESTE, e so de teste: a tabela de decisao abaixo e o coracao
     # deste conserto, e sem poder forcar "EnablePending" nao havia como provar
     # que ela decide certo — so afirmar. Fora de um teste a variavel nao
@@ -39,11 +43,11 @@ function Estado-Do-Recurso($nome) {
     if ($env:HORMOS_TESTE_RECURSOS) {
         foreach ($par in $env:HORMOS_TESTE_RECURSOS -split ';') {
             $kv = $par -split '=', 2
-            if ($kv[0] -eq $nome) { return [string]$kv[1] }
+            if ($kv[0] -eq $recurso) { return [string]$kv[1] }
         }
         return ''
     }
-    try { return [string](Get-WindowsOptionalFeature -Online -FeatureName $nome).State }
+    try { return [string](Get-WindowsOptionalFeature -Online -FeatureName $recurso).State }
     catch { return '' }
 }
 
@@ -66,6 +70,24 @@ function Distros-Registradas {
     return @($cru) |
         ForEach-Object { ($_ -replace "`0", '' -replace '\uFEFF', '').Trim() } |
         Where-Object { $_ -ne '' }
+}
+
+if ($Checar -eq 'diagnostico') {
+    $vmp = Estado-Do-Recurso 'VirtualMachinePlatform'
+    $wsl = Estado-Do-Recurso 'Microsoft-Windows-Subsystem-Linux'
+    Write-Output "  VirtualMachinePlatform .......... $(if($vmp){$vmp}else{'(nao consegui ler)'})"
+    Write-Output "  Subsystem-Linux (recurso) ....... $(if($wsl){$wsl}else{'(nao consegui ler)'})"
+    & wsl.exe --version *> $null
+    Write-Output "  'wsl --version' responde ........ $(if($LASTEXITCODE -eq 0){'sim'}else{'nao'})"
+    & wsl.exe --status *> $null
+    Write-Output "  'wsl --status' responde ......... $(if($LASTEXITCODE -eq 0){'sim'}else{'nao'})"
+    $d = Distros-Registradas
+    Write-Output "  distribuicoes registradas ....... $(if($d){$d -join ', '}else{'(nenhuma)'})"
+    foreach ($nd in @($d)) {
+        & wsl.exe -d $nd -u root -- true *> $null
+        Write-Output "  $nd executa como root ........... $(if($LASTEXITCODE -eq 0){'sim'}else{"NAO (codigo $LASTEXITCODE)"})"
+    }
+    exit 0
 }
 
 if ($Checar -eq 'plataforma') {
